@@ -1,9 +1,9 @@
 {
   "scripts": {
-    "f": "cd frontend && npm run dev",
-    "b": "cd backend && npm run dev",
-    "dev": "concurrently \"npm run f\" \"npm run b\"",
-    "setup": "npm install && cd backend && npm install && cd ../frontend && npm install"
+  "f": "cd src/frontend && npm run dev",
+  "b": "cd src/backend && npm run dev",
+  "dev": "concurrently \"npm run f\" \"npm run b\"",
+  "setup": "npm install && cd src/backend && npm install && cd ../frontend && npm install"
   },
     "devDependencies": {
         "concurrently": "^7.6.0"
