@@ -11,7 +11,7 @@
 
 - **Acceptance**: người dùng tạo được post chứa đầy đủ trường bắt buộc; preview hiển thị đúng; nguyên liệu có thể thay đổi lượng/đơn vị.
 
-### 2. Rating và bình luậAIn
+### 2. Rating và bình luận
 
 - **Mô tả**: cho phép đánh giá điểm (1–5 sao) và bình luận có threading (trả lời bình luận).
 
