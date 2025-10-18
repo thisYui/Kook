@@ -89,6 +89,7 @@ Mọi dữ liệu được đồng bộ để đảm bảo trải nghiệm nhấ
 - `cuisine` (jsonb enum)
 - `country_code` (varchar, iso2)
 - `image_url` (text)
+- `view_count` (integer)
 - `is_deleted` (boolean, default: false)
 - `created_at` (timestamp)
 - `updated_at` (timestamp)
