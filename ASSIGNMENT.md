@@ -35,32 +35,183 @@ Mọi dữ liệu được đồng bộ để đảm bảo trải nghiệm nhấ
 
 # Schema
 ## SQL - PostgreSQL
-- User: user_id, name, email, password_hash, avatar_url, language, theme, allergies (Json enum: Loại nguyên liệu dc lưu ở backend), bio, created_at, updated_at 
-- JWT_Token: jwt_id, user_id (FK→User), token, exp, user_agent, ip_address, created_at, updated_at
-- Follow: follow_id, follower_id (FK→User), followee_id (FK→User), created_at, updated_at
-- Post: post_id, author_id (FK→User), recipe_id (FK→Recipe), title, rating_avg, rating_count, short_description, cuisine (Json enum: Loại ẩm thực dc lưu ở backend), country_code (iso2), image_url, created_at, updated_at
-- Ingredient: ingredient_id, post_id (FK→Post), ingredient_key (Json enum: Loại nguyên liệu dc lưu ở backend), weight, created_at, updated_at
-- Recipe: recipe_id, post_id (FK→Post), total_time, difficulty, total_steps, current_version, created_at, updated_at
-- Rating: rating_id, post_id (FK→Post), user_id (FK→User), value, created_at, updated_at
-- Comment: comment_id, post_id (FK→Post), user_id (FK→User), content, created_at, updated_at
-- Badge: badge_id, title, description, created_at, updated_at (criteria (tiêu chí) (JSON) sẽ được lưu ở phía backend để kiểm tra vì nó là thuộc tính phi nguyên tố) 
-- User_Badge: id, user_id (FK→User), badge_id (FK→Badge), created_at, updated_at
-- Repost: repost_id, original_post_id (FK→Post), sharer_id (FK→User), description, created_at, updated_at
-- Notebook: notebook_id, user_id (FK→User), post_id (FK→Post), created_at, updated_at (Chỉ xem lại ko phải đăng lại)
-- Notification: notification_id, user_id (FK→User), is_read, created_at, updated_at
-- Note:
-note_id (UUID),
-user_id (FK→User),
-post_id (FK→Post),
-step_order (int),                 -- bước trong RecipeDetail.steps
-content (text),
-color (int),
-start_index (int),
-end_index (int),
-anchor_text (text),               -- đoạn gốc được highlight
-recipe_version (int),             -- version khi tạo note
-is_broken (bool DEFAULT false),   -- nếu không thể map khi recipe thay đổi
-created_at, updated_at
+### User
+- `user_id` (PK, uuid)
+- `name` (varchar)
+- `email` (varchar, unique)
+- `password_hash` (varchar)
+- `avatar_url` (text)
+- `language` (varchar)
+- `theme` (varchar)
+- `bio` (text)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Ingredient_Catalog
+- `ingredient_key` (PK, text)
+- `display_name` (varchar)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### User_Allergy
+- `id` (PK, uuid)
+- `user_id` (FK → User)
+- `ingredient_key` (FK → Ingredient_Catalog)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+- **Unique**: (user_id, ingredient_key)
+
+### JWT_Token
+- `jwt_id` (PK, uuid)
+- `user_id` (FK → User)
+- `token` (text)
+- `exp` (timestamp)
+- `user_agent` (text)
+- `ip_address` (varchar)
+- `revoked` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Follow
+- `follow_id` (PK, uuid)
+- `follower_id` (FK → User)
+- `followee_id` (FK → User)
+- `created_at` (timestamp)
+- **Unique**: (follower_id, followee_id)
+
+### Post
+- `post_id` (PK, uuid)
+- `author_id` (FK → User)
+- `title` (varchar)
+- `short_description` (text)
+- `rating_avg` (decimal)
+- `rating_count` (integer)
+- `cuisine` (jsonb enum)
+- `country_code` (varchar, iso2)
+- `image_url` (text)
+- `is_deleted` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Recipe
+- `recipe_id` (PK, uuid)
+- `post_id` (FK → Post)
+- `total_time` (integer)
+- `difficulty` (varchar)
+- `total_steps` (integer)
+- `current_version` (integer)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Recipe_Version_Map
+- `id` (PK, uuid)
+- `recipe_id` (FK → Recipe)
+- `mongo_version` (integer)
+- `created_at` (timestamp)
+- `synced_at` (timestamp)
+
+### Ingredient
+- `ingredient_id` (PK, uuid)
+- `post_id` (FK → Post)
+- `ingredient_key` (FK → Ingredient_Catalog)
+- `quantity` (numeric), 
+- `unit` (varchar),
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Rating
+- `rating_id` (PK, uuid)
+- `post_id` (FK → Post)
+- `user_id` (FK → User)
+- `value` (integer, check: 1–5)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Comment
+- `comment_id` (PK, uuid)
+- `post_id` (FK → Post)
+- `user_id` (FK → User)
+- `content` (text)
+- `is_deleted` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Badge
+- `badge_id` (PK, uuid)
+- `title` (varchar)
+- `description` (text)
+- `criteria` (jsonb)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### User_Badge
+- `id` (PK, uuid)
+- `user_id` (FK → User)
+- `badge_id` (FK → Badge)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+- **Unique**: (user_id, badge_id)
+
+### Repost
+- `repost_id` (PK, uuid)
+- `original_post_id` (FK → Post)
+- `sharer_id` (FK → User)
+- `description` (text)
+- `is_deleted` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Notebook
+- `notebook_id` (PK, uuid)
+- `user_id` (FK → User)
+- `post_id` (FK → Post)
+- `is_deleted` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Tag
+- `tag_id` (PK, uuid)
+- `name` (varchar, unique)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Post_Tag
+- `id` (PK, uuid)
+- `post_id` (FK → Post)
+- `tag_id` (FK → Tag)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+- **Unique**: (post_id, tag_id)
+
+### MealPlan_Meta
+- `plan_id` (PK, uuid)
+- `user_id` (FK → User)
+- `goal` (text)
+- `week_start` (date)
+- `version` (integer)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Notification
+- `notification_id` (PK, uuid)
+- `user_id` (FK → User)
+- `type` (enum: follow, comment, rating, badge, repost, system)
+- `is_read` (boolean, default: false)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
+
+### Note
+- `note_id` (PK, uuid)
+- `user_id` (FK → User)
+- `post_id` (FK → Post)
+- `step_order` (integer)
+- `content` (text)
+- `color` (integer)
+- `start_index` (integer)
+- `end_index` (integer)
+- `version` (integer)
+- `created_at` (timestamp)
+- `updated_at` (timestamp)
 
 ## NoSQL – MongoDB
 Collection: RecipeDetail
@@ -71,8 +222,8 @@ Mỗi document tương ứng với 1 recipe/post trong SQL.
 Cấu trúc ví dụ:
 
 {
-  "recipe_id": "uuid_123",
-  "post_id": "uuid_456",
+  "recipe_id": "uuid_recipe",
+  "post_id": "uuid_post",
   "ingredients": [
     {
       "group": "Phần bánh",
@@ -82,10 +233,10 @@ Cấu trúc ví dụ:
       ]
     },
     {
-      "group": "Phần kem",
+      "group": "Phần nhân",
       "items": [
-        {"name": "Kem whipping", "quantity": "150ml"},
-        {"name": "Đường", "quantity": "50g"}
+        {"name": "Thịt băm", "quantity": "300g"},
+        {"name": "Hành tím", "quantity": "1 củ", "note": "băm nhỏ"}
       ]
     }
   ],
@@ -99,29 +250,42 @@ Cấu trúc ví dụ:
         {"type": "video", "url": "https://cdn/step1.mp4"}
       ],
       "duration": 3,
-      "has_timer": false
-    },
-    {
-      "order": 2,
-      "title": "Nấu nước dùng",
-      "description": "Đun sôi 1.5L nước trong 10 phút.",
-      "media": [],
-      "duration": 10,
-      "has_timer": true
-    }
-  ],
-  "tips": [
-    "Không đun quá lâu để giữ vị ngọt tự nhiên.",
-    "Có thể thay thịt gà bằng thịt bò nếu muốn."
-  ],
-  "notes": [
-    {"user_id": "u1", "content": "Tôi giảm muối còn 1/2 thì hợp khẩu vị hơn."}
+      "has_timer": false,
+      tips": [
+        "Sử dụng rau tươi để món ăn ngon hơn.",
+        "Có thể ngâm rau trong nước muối loãng 10 phút."
+      ]
   ],
   "version": 3,
-  "last_updated": "2025-10-16T21:00:00Z"
+  "created_at": "2025-10-15T10:00:00Z",
+  "updated_at": "2025-10-16T12:00:00Z"
 }
 
 ingredients: linh hoạt, có thể chia nhóm.
 steps: chứa mô tả, media (ảnh/video), thời lượng.
 notes: cho phép user đính kèm nhận xét riêng.
 version: để quản lý nếu user sửa công thức (giúp versioning).
+
+Collection: MealPlan
+
+Cấu trúc ví dụ
+{
+  "plan_id": "uuid_plan",
+  "user_id": "uuid_user",
+  "week_start": "2025-10-20",
+  "meals": {
+    "Monday": [
+      {"meal_type": "Breakfast", "recipe_id": "uuid_r1"},
+      {"meal_type": "Lunch", "recipe_id": "uuid_r2"},
+      {"meal_type": "Dinner", "recipe_id": "uuid_r3"}
+    ],
+    "Tuesday": [
+      {"meal_type": "Breakfast", "recipe_id": "uuid_r4"},
+      {"meal_type": "Lunch", "recipe_id": "uuid_r5"},
+      {"meal_type": "Dinner", "recipe_id": "uuid_r6"}
+    ]
+  },
+  "version": 1,
+  "created_at": "2025-10-15T10:00:00Z",
+  "updated_at": "2025-10-16T12:00:00Z"
+}

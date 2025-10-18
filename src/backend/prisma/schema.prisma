@@ -1,0 +1,351 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String   @id @default(uuid()) @map("user_id") @db.Uuid
+  name          String   @db.VarChar(255)
+  email         String   @unique @db.VarChar(255)
+  passwordHash  String   @map("password_hash") @db.VarChar(255)
+  avatarUrl     String?  @map("avatar_url") @db.Text
+  language      String?  @db.VarChar(10)
+  theme         String?  @db.VarChar(20)
+  bio           String?  @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  allergies     UserAllergy[]
+  jwtTokens     JwtToken[]
+  following     Follow[]       @relation("Follower")
+  followers     Follow[]       @relation("Followee")
+  posts         Post[]
+  ratings       Rating[]
+  comments      Comment[]
+  badges        UserBadge[]
+  reposts       Repost[]
+  notebooks     Notebook[]
+  mealPlans     MealPlanMeta[]
+  notifications Notification[]
+  notes         Note[]
+
+  @@map("users")
+}
+
+model IngredientCatalog {
+  ingredientKey String   @id @map("ingredient_key") @db.Text
+  displayName   String   @map("display_name") @db.VarChar(255)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  allergies   UserAllergy[]
+  ingredients Ingredient[]
+
+  @@map("ingredient_catalog")
+}
+
+model UserAllergy {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  ingredientKey String   @map("ingredient_key") @db.Text
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  ingredient IngredientCatalog @relation(fields: [ingredientKey], references: [ingredientKey], onDelete: Cascade)
+
+  @@unique([userId, ingredientKey])
+  @@map("user_allergies")
+}
+
+model JwtToken {
+  id        String   @id @default(uuid()) @map("jwt_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  token     String   @db.Text
+  exp       DateTime @db.Timestamp
+  userAgent String?  @map("user_agent") @db.Text
+  ipAddress String?  @map("ip_address") @db.VarChar(45)
+  revoked   Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("jwt_tokens")
+}
+
+model Follow {
+  id         String   @id @default(uuid()) @map("follow_id") @db.Uuid
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp
+
+  // Relations
+  follower User @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("Followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followeeId])
+  @@map("follows")
+}
+
+model Post {
+  id               String   @id @default(uuid()) @map("post_id") @db.Uuid
+  authorId         String   @map("author_id") @db.Uuid
+  title            String   @db.VarChar(500)
+  shortDescription String?  @map("short_description") @db.Text
+  ratingAvg        Decimal? @map("rating_avg") @db.Decimal(3, 2)
+  ratingCount      Int      @default(0) @map("rating_count")
+  cuisine          Json?    @db.JsonB
+  countryCode      String?  @map("country_code") @db.VarChar(2)
+  imageUrl         String?  @map("image_url") @db.Text
+  isDeleted        Boolean  @default(false) @map("is_deleted")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  author      User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  recipe      Recipe?
+  ingredients Ingredient[]
+  ratings     Rating[]
+  comments    Comment[]
+  reposts     Repost[]
+  notebooks   Notebook[]
+  tags        PostTag[]
+  notes       Note[]
+
+  @@map("posts")
+}
+
+model Recipe {
+  id             String   @id @default(uuid()) @map("recipe_id") @db.Uuid
+  postId         String   @unique @map("post_id") @db.Uuid
+  totalTime      Int?     @map("total_time")
+  difficulty     String?  @db.VarChar(50)
+  totalSteps     Int?     @map("total_steps")
+  currentVersion Int      @default(1) @map("current_version")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  post        Post                 @relation(fields: [postId], references: [id], onDelete: Cascade)
+  versionMaps RecipeVersionMap[]
+
+  @@map("recipes")
+}
+
+model RecipeVersionMap {
+  id           String    @id @default(uuid()) @db.Uuid
+  recipeId     String    @map("recipe_id") @db.Uuid
+  mongoVersion Int       @map("mongo_version")
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamp
+  syncedAt     DateTime? @map("synced_at") @db.Timestamp
+
+  // Relations
+  recipe Recipe @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@map("recipe_version_maps")
+}
+
+model Ingredient {
+  id            String   @id @default(uuid()) @map("ingredient_id") @db.Uuid
+  postId        String   @map("post_id") @db.Uuid
+  ingredientKey String   @map("ingredient_key") @db.Text
+  quantity      Decimal? @db.Decimal(10, 2)
+  unit          String?  @db.VarChar(50)
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  post              Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
+  ingredientCatalog IngredientCatalog @relation(fields: [ingredientKey], references: [ingredientKey], onDelete: Cascade)
+
+  @@map("ingredients")
+}
+
+model Rating {
+  id        String   @id @default(uuid()) @map("rating_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  value     Int      @db.SmallInt
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("ratings")
+}
+
+model Comment {
+  id        String   @id @default(uuid()) @map("comment_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  content   String   @db.Text
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("comments")
+}
+
+model Badge {
+  id          String   @id @default(uuid()) @map("badge_id") @db.Uuid
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  criteria    Json     @db.JsonB
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  badgeId   String   @map("badge_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@map("user_badges")
+}
+
+model Repost {
+  id             String   @id @default(uuid()) @map("repost_id") @db.Uuid
+  originalPostId String   @map("original_post_id") @db.Uuid
+  sharerId       String   @map("sharer_id") @db.Uuid
+  description    String?  @db.Text
+  isDeleted      Boolean  @default(false) @map("is_deleted")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  originalPost Post @relation(fields: [originalPostId], references: [id], onDelete: Cascade)
+  sharer       User @relation(fields: [sharerId], references: [id], onDelete: Cascade)
+
+  @@map("reposts")
+}
+
+model Notebook {
+  id        String   @id @default(uuid()) @map("notebook_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  isDeleted Boolean  @default(false) @map("is_deleted")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("notebooks")
+}
+
+model Tag {
+  id        String   @id @default(uuid()) @map("tag_id") @db.Uuid
+  name      String   @unique @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  id        String   @id @default(uuid()) @db.Uuid
+  postId    String   @map("post_id") @db.Uuid
+  tagId     String   @map("tag_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, tagId])
+  @@map("post_tags")
+}
+
+model MealPlanMeta {
+  id        String   @id @default(uuid()) @map("plan_id") @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  goal      String?  @db.Text
+  weekStart DateTime @map("week_start") @db.Date
+  version   Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("meal_plan_meta")
+}
+
+enum NotificationType {
+  follow
+  comment
+  rating
+  badge
+  repost
+  system
+
+  @@map("notification_type")
+}
+
+model Notification {
+  id        String           @id @default(uuid()) @map("notification_id") @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamp
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+model Note {
+  id         String   @id @default(uuid()) @map("note_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  postId     String   @map("post_id") @db.Uuid
+  stepOrder  Int?     @map("step_order")
+  content    String   @db.Text
+  color      Int?
+  startIndex Int?     @map("start_index")
+  endIndex   Int?     @map("end_index")
+  version    Int      @default(1)
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamp
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamp
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@map("notes")
+}
