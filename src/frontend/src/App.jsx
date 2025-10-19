@@ -3,14 +3,16 @@ import reactLogo from './assets/react.svg'
 import viteLogo from '/vite.svg'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
-
+import SignupPage from './pages/SignupPage'
+import OTPVerificationPage from './pages/OTPPage'
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-          {/*<Route element={<AuthLayout />}>*/}
-          {/*    /!*<Route path="/login" element={<LoginPage />} />*!/*/}
-          {/*    /!*<Route path="/signup" element={<SignupPage />} />*!/*/}
+          {/* <Route element={<AuthLayout />}> */}
+          {/* <Route path="/login" element={<LoginPage />} /> */}
+             /!*<Route path="/" element={<SignupPage />} />*!/
+             /!*<Route path="/otp" element={<OTPVerificationPage />} />*!/
           {/*    /!*<Route path="/confirm_otp" element={<ConfirmOTPPage />} />*!/*/}
           {/*</Route>*/}
 
@@ -30,7 +32,7 @@ function App() {
           {/*<Route element={<FullPageLayout />}>*/}
           {/*  /!*<Route path="/cook" element={<CookPage />} /> step by step*!/*/}
           {/*  /!*<Route path="*" element={<NotFoundPage />} />*!/*/}
-          {/*</Route>*/}
+          {/* </Route> */}
       </Routes>
     </BrowserRouter>
   )

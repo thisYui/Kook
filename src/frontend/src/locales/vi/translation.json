@@ -2,7 +2,10 @@
     "login": {
         "title": "Đăng nhập",
         "email": "Email",
+        "emailPlaceholder": "Email",
         "password": "Mật khẩu",
+        "passwordPlaceholder": "Mật khẩu",
+        "remember": "Duy trì đăng nhập",
         "submit": "Đăng nhập",
         "forgotPassword": "Quên mật khẩu?",
         "noAccountPrefix": "Chưa có tài khoản?",
@@ -10,9 +13,11 @@
         "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không đúng.",
         "invalidEmail": "Email không hợp lệ.",
         "emptyFields": "Vui lòng điền tất cả các trường.",
-        "success": "Đăng nhập thành công!"
+        "success": "Đăng nhập thành công!",
+        "noAccount": "Bạn chưa có tài khoản?"
     },
-    "register": {
+    "signup": {
+        "haveAccount": "Bạn đã có tài khoản?",
         "title": "Đăng ký",
         "username": "Tên đăng nhập",
         "email": "Email",
@@ -20,8 +25,21 @@
         "confirmPassword": "Xác nhận mật khẩu",
         "submit": "Đăng ký",
         "haveAccountPrefix": "Đã có tài khoản?",
+        "emptyFields": "Vui lòng điền tất cả các trường.",
         "haveAccountLink": "Đăng nhập",
         "passwordMismatch": "Mật khẩu không khớp.",
         "success": "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."
+    },
+    "otp": {
+        "title": "Xác Minh OTP",
+        "description": "Nhập mã 6 số đã được gửi tới",
+        "incomplete": "Vui lòng nhập đủ 6 số",
+        "networkError": "Lỗi kết nối. Vui lòng thử lại.",
+        "verifying": "Đang xác minh...",
+        "verify": "Xác Minh",
+        "didntReceive": "Không nhận được mã?",
+        "resend": "Gửi lại",
+        "resendIn": "Gửi lại sau",
+        "backToLogin": "Quay lại đăng ký"
     }
 }
