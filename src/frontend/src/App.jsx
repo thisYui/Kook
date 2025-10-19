@@ -27,7 +27,7 @@ function App() {
           {/*    /!*<Route path="/" element={<IndexPage />} />*!/*/}
           {/*</Route>*/}
 
-          {/*<Route element={<FullLayout />}>*/}
+          {/*<Route element={<FullPageLayout />}>*/}
           {/*  /!*<Route path="/cook" element={<CookPage />} /> step by step*!/*/}
           {/*  /!*<Route path="*" element={<NotFoundPage />} />*!/*/}
           {/*</Route>*/}

@@ -1,6 +1,5 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -104,7 +103,6 @@ model Post {
   shortDescription String?  @map("short_description") @db.Text
   ratingAvg        Decimal? @map("rating_avg") @db.Decimal(3, 2)
   ratingCount      Int      @default(0) @map("rating_count")
-  cuisine          Json?    @db.JsonB
   countryCode      String?  @map("country_code") @db.VarChar(2)
   imageUrl         String?  @map("image_url") @db.Text
   viewCount        Int      @default(0) @map("view_count")
