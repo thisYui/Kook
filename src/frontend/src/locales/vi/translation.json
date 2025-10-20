@@ -1,0 +1,43 @@
+{
+    "login": {
+        "title": "Đăng nhập",
+        "email": "Email",
+        "password": "Mật khẩu",
+        "submit": "Đăng nhập",
+        "forgotPassword": "Quên mật khẩu?",
+        "noAccountPrefix": "Chưa có tài khoản?",
+        "noAccountLink": "Đăng ký",
+        "invalidCredentials": "Tên đăng nhập hoặc mật khẩu không đúng.",
+        "invalidEmail": "Email không hợp lệ.",
+        "emptyFields": "Vui lòng điền tất cả các trường.",
+        "success": "Đăng nhập thành công!"
+    },
+    "register": {
+        "title": "Đăng ký",
+        "username": "Tên đăng nhập",
+        "email": "Email",
+        "password": "Mật khẩu",
+        "confirmPassword": "Xác nhận mật khẩu",
+        "submit": "Đăng ký",
+        "haveAccountPrefix": "Đã có tài khoản?",
+        "haveAccountLink": "Đăng nhập",
+        "passwordMismatch": "Mật khẩu không khớp.",
+        "success": "Đăng ký thành công! Vui lòng kiểm tra email để xác nhận tài khoản."
+    },
+    "undeveloped": {
+        "title": "Đang Phát Triển",
+        "description": "Tính năng này hiện đang được phát triển.",
+        "message": "Chúng tôi đang nỗ lực để mang đến tính năng này sớm nhất. Vui lòng quay lại sau!",
+        "progress": "Tiến độ: 65%",
+        "goHome": "Về Trang Chủ",
+        "goBack": "Quay Lại",
+        "stayTuned": "Theo Dõi Chúng Tôi!",
+        "followUs": "Theo dõi chúng tôi trên mạng xã hội để cập nhật các tính năng và phiên bản mới."
+    },
+    "notFound": {
+        "title": "Không Tìm Thấy Trang",
+        "description": "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+        "goHome": "Về Trang Chủ",
+        "goBack": "Quay Lại"
+    }
+}

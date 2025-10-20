@@ -1,3 +1,18 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-primary-start: #9E243B;
+  --color-primary-end: #EBD6BB;
+  --color-background: #FFFFFF;
+  --color-text: #000000;
+  --gradient-primary: linear-gradient(
+    to right,               /* hướng gradient */
+    var(--color-primary-start),
+    var(--color-primary-end)
+  );
+}
+
+.dark {
+}

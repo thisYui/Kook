@@ -1,10 +1,36 @@
 {
+  "name": "kook-backend",
+  "version": "1.0.0",
+  "description": "Backend for Kook recipe sharing application",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js",
+    "prisma:init": "prisma init",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev --name init_schema",
+    "prisma:migrate:create": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "prisma:push": "prisma db push",
+    "prisma:reset": "prisma migrate reset",
+    "prisma:format": "prisma format",
+    "db:seed": "node src/seed.js",
+    "setup:prisma": "npm install prisma --save-dev && npm install @prisma/client && npm run prisma:init",
+    "setup:db": "npm run prisma:migrate && npm run prisma:generate"
+  },
   "dependencies": {
+    "mongoose": "^8.19.1",
+    "@prisma/client": "^5.22.0",
     "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0"
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "bcrypt": "^5.1.1",
+    "jsonwebtoken": "^9.0.2",
+    "winston": "^3.11.0",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "prisma": "^5.22.0"
   }
 }
