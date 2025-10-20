@@ -1,4 +1,5 @@
 import apiClient, { setAuthToken } from './apiClient';
+import authService from './authService';
 
 // Auth API methods
 export const authApi = {
@@ -17,8 +18,9 @@ export const authApi = {
         const response = await apiClient.post('/api/auth/login', body);
 
         if (response.data.token) {
+            // Use authService to handle login
+            authService.handleLogin(response.data);
             setAuthToken(response.data.token);
-            localStorage.setItem('token', response.data.token);
         }
 
         return response.data;
@@ -27,7 +29,7 @@ export const authApi = {
     // Register new user - Backend expects: email, password, fullName
     signup: async (fullName, email, password, confirmPassword) => {
         const response = await apiClient.post('/api/auth/signup', {
-            fullName,  // Changed from full_name to fullName
+            fullName,
             email,
             password,
             confirm_password: confirmPassword
@@ -41,6 +43,13 @@ export const authApi = {
             email,
             otp
         });
+
+        // If OTP confirmation returns token, handle login
+        if (response.data.token) {
+            authService.handleLogin(response.data);
+            setAuthToken(response.data.token);
+        }
+
         return response.data;
     },
 
@@ -57,7 +66,7 @@ export const authApi = {
         const response = await apiClient.post('/api/auth/reset-password', {
             email,
             otp,
-            newPassword,  // Changed from new_password to newPassword
+            newPassword,
             confirm_password: confirmPassword
         });
         return response.data;
@@ -66,10 +75,16 @@ export const authApi = {
     // Change email - Backend expects: uid, newEmail
     changeEmail: async (uid, newEmail, password) => {
         const response = await apiClient.post('/api/auth/change-email', {
-            uid,  // Changed from user_id to uid
-            newEmail,  // Changed from new_email to newEmail
+            uid,
+            newEmail,
             password
         });
+
+        // Update user data if successful
+        if (response.data.success) {
+            authService.updateUserData({ email: newEmail });
+        }
+
         return response.data;
     },
 
@@ -95,6 +110,12 @@ export const authApi = {
                 'Content-Type': 'multipart/form-data',
             }
         });
+
+        // Update user data if successful
+        if (response.data.success && response.data.avatar_url) {
+            authService.updateUserData({ avatar: response.data.avatar_url });
+        }
+
         return response.data;
     },
 
@@ -108,17 +129,21 @@ export const authApi = {
         return response.data;
     },
 
-    // Renew token
-    renewToken: async (oldToken) => {
-        const response = await apiClient.post('/api/auth/renew-token', {
+    // Refresh token
+    refreshToken: async (oldToken) => {
+        const response = await apiClient.post('/api/auth/refresh-token', {
             token: oldToken,
             device: navigator.platform,
             user_agent: navigator.userAgent,
         });
 
         if (response.data.token) {
+            authService.setTokens(
+                response.data.token,
+                response.data.refresh_token || oldToken,
+                response.data.expires_in || 3600
+            );
             setAuthToken(response.data.token);
-            localStorage.setItem('token', response.data.token);
         }
 
         return response.data;
@@ -126,23 +151,29 @@ export const authApi = {
 
     // Logout
     logout: async () => {
-        const token = localStorage.getItem('token');
+        const token = authService.getToken();
 
         if (!token) {
             return { success: true };
         }
 
-        const response = await apiClient.post('/api/auth/logout', {
-            jti: token,
-            device: navigator.platform,
-            user_agent: navigator.userAgent,
-        });
+        try {
+            const response = await apiClient.post('/api/auth/logout', {
+                jti: token,
+                device: navigator.platform,
+                user_agent: navigator.userAgent,
+            });
 
-        setAuthToken(null);
-        sessionStorage.clear();
-        localStorage.removeItem('token');
+            authService.clearAuth();
+            setAuthToken(null);
 
-        return response.data;
+            return response.data;
+        } catch (error) {
+            // Clear auth even if logout request fails
+            authService.clearAuth();
+            setAuthToken(null);
+            throw error;
+        }
     },
 };
 

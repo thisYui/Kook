@@ -9,7 +9,7 @@ const {
     changePassword,
     changeAvatar,
     verifyToken,
-    renewToken,
+    refreshToken,
     logout,
 } = require("../controllers/authControllers");
 const router = express.Router();
@@ -23,7 +23,7 @@ router.post("/change-email", changeEmail);
 router.post("/change-password", changePassword);
 router.post("/change-avatar", changeAvatar);
 router.post("/verify-token", verifyToken);
-router.post("/renew-token", renewToken);
+router.post("/refresh-token", refreshToken);
 router.post("/logout", logout);
 
 module.exports = router;

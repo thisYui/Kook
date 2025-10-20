@@ -6,11 +6,12 @@
  * await api.auth.login(email, password);
  *
  * Or import specific modules:
- * import { authApi, postsApi } from '@/api';
+ * import { authApi, postsApi, authService } from '@/api';
  * await authApi.login(email, password);
  */
 
 import apiClient from './apiClient';
+import authService from './authService';
 import { authApi } from './auth';
 import { postsApi } from './posts';
 import { usersApi } from './users';
@@ -22,6 +23,7 @@ import { filesApi } from './files';
 // Export individual APIs
 export {
     apiClient,
+    authService,
     authApi,
     postsApi,
     usersApi,
@@ -40,4 +42,5 @@ export default {
     search: searchApi,
     overview: overviewApi,
     files: filesApi,
+    authService,
 };

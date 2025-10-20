@@ -164,7 +164,7 @@ async function verifyToken(req, res) {
     }
 }
 
-async function renewToken(req, res) {
+async function refreshToken(req, res) {
     const { uid, refreshToken, ipAddress, userAgent } = req.body;
 
     try {
@@ -209,6 +209,6 @@ module.exports = {
     changePassword,
     changeAvatar,
     verifyToken,
-    renewToken,
+    refreshToken,
     logout,
 }
