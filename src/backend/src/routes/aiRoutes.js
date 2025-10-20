@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const {
     generateMenuWeek,
-    mageRecognition,
+    imageRecognition,
     suggestedDishes,
     nutritionAnalysis
 } = require('../controllers/aiControllers');
