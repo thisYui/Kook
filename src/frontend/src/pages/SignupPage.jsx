@@ -52,7 +52,7 @@ export default function SignupPage() {
           name="username"
           value={form.username}
           onChange={handleChange}
-          placeholder="Choose a username"
+          placeholder={t("signup.username")}
           className="w-full flex flex-col"
           required
         />
@@ -63,7 +63,7 @@ export default function SignupPage() {
           type="email"
           value={form.email}
           onChange={handleChange}
-          placeholder="you@example.com"
+          placeholder={t("signup.email")}
           className="w-full flex flex-col"
           required
         />
@@ -73,7 +73,7 @@ export default function SignupPage() {
           name="password"
           value={form.password}
           onChange={handleChange}
-          placeholder="Enter password"
+          placeholder={t("signup.password")}
           required
         />
 
@@ -82,7 +82,7 @@ export default function SignupPage() {
           name="confirmPassword"
           value={form.confirmPassword}
           onChange={handleChange}
-          placeholder="Re-enter password"
+          placeholder={t("signup.confirmPassword")}
           required
         />
 
