@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
 const { logServerAddresses } = require('./utils/network');
 const logger = require('./config/logger');
 const { requestLogger, errorLogger, notFoundLogger } = require('./middleware/logger');
+const errorHandlerMiddleware = require('./middleware/errorHandler');
 
 // Routes
 const overviewRoutes = require('./routes/overviewRoutes');
@@ -36,11 +37,11 @@ app.use('/api/users', userRoutes);
 app.use('/api/search', searchRoutes);
 app.use('/api/ai', aiRoutes);
 
-// 404 handler - phải đặt sau tất cả routes
+// 404 handler
 app.use(notFoundLogger);
 
-// Error handler - phải đặt cuối cùng
-app.use(errorLogger);
+// Error handler middleware
+app.use(errorHandlerMiddleware);
 
 // Start function so we can await connections
 const start = async () => {
