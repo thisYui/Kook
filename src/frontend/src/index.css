@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 :root {
-  --color-primary-start: #9E243B;
   --color-primary-end: #EBD6BB;
+  --color-primary-start:  #9E243B;
   --color-background: #FFFFFF;
   --color-text: #000000;
   --gradient-primary: linear-gradient(
