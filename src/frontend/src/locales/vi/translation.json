@@ -41,5 +41,20 @@
         "resend": "Gửi lại",
         "resendIn": "Gửi lại sau",
         "backToLogin": "Quay lại đăng ký"
+    "undeveloped": {
+        "title": "Đang Phát Triển",
+        "description": "Tính năng này hiện đang được phát triển.",
+        "message": "Chúng tôi đang nỗ lực để mang đến tính năng này sớm nhất. Vui lòng quay lại sau!",
+        "progress": "Tiến độ: 65%",
+        "goHome": "Về Trang Chủ",
+        "goBack": "Quay Lại",
+        "stayTuned": "Theo Dõi Chúng Tôi!",
+        "followUs": "Theo dõi chúng tôi trên mạng xã hội để cập nhật các tính năng và phiên bản mới."
+    },
+    "notFound": {
+        "title": "Không Tìm Thấy Trang",
+        "description": "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
+        "goHome": "Về Trang Chủ",
+        "goBack": "Quay Lại"
     }
 }

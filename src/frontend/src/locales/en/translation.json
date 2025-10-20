@@ -1,0 +1,19 @@
+{
+    "undeveloped": {
+        "title": "Under Development",
+        "description": "This feature is currently under development.",
+        "message": "We are working hard to bring you this feature soon. Please check back later!",
+        "progress": "Progress: 65%",
+        "goHome": "Go to Home",
+        "goBack": "Go Back",
+        "stayTuned": "Stay Tuned!",
+        "followUs": "Follow us on social media for updates on new features and releases."
+    },
+    "notFound": {
+        "title": "Page Not Found",
+        "description": "Sorry, the page you are looking for does not exist or has been moved.",
+        "goHome": "Go to Home",
+        "goBack": "Go Back"
+    }
+}
+

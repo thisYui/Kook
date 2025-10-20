@@ -1,142 +1,180 @@
-import axios from 'axios';
-
-// Base URL for the backend API - adjust based on environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL
-    || `${window.location.protocol}//${window.location.hostname}:80`;
-
-
-// Create an Axios instance with default configurations
-const apiClient = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json',
-    },
-});
-
-// Function to set the Authorization header with the JWT token
-const setAuthToken = (token) => {
-    if (token) {
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-        delete apiClient.defaults.headers.common['Authorization'];
-    }
-};
+import apiClient, { setAuthToken } from './apiClient';
+import authService from './authService';
 
 // Auth API methods
 export const authApi = {
+    // Login user
     login: async (email, password, rememberMe = false) => {
-        let body;
+        const body = {
+            email,
+            password,
+            remember_me: rememberMe,
+            jwt_token: {
+                device: navigator.platform,
+                user_agent: navigator.userAgent,
+            }
+        };
 
-        if (localStorage.getItem('token') !== null) {
-            body = {
-                token: {
-                    jti: localStorage.getItem('token'),
-                    device: navigator.platform,
-                    user_agent: navigator.userAgent,
-                }
-            };
-        } else if (email && password) {
-            body = {
-                email,
-                password,
-                remember_me: rememberMe,
-                jwt_token: {
-                    device: navigator.platform,
-                    user_agent: navigator.userAgent,
-                }
-            };
-        } else {
-            return { error: 'No token or credentials provided' };
-        }
-
-        const response = await apiClient.post('/auth/login', body);
+        const response = await apiClient.post('/api/auth/login', body);
 
         if (response.data.token) {
+            // Use authService to handle login
+            authService.handleLogin(response.data);
             setAuthToken(response.data.token);
-            localStorage.setItem('token', response.data.token);
         }
 
         return response.data;
     },
 
-    register: async (full_name, email, password, confirm_password) => {
-      const response = await apiClient.post('/auth/register', {
-          full_name,
-          email,
-          password,
-          confirm_password
-      });
-      return response.data;
-    },
-
-    sendOtp: async (email) => {
-        const response = await apiClient.post('/auth/send_otp', { email });
+    // Register new user - Backend expects: email, password, fullName
+    signup: async (fullName, email, password, confirmPassword) => {
+        const response = await apiClient.post('/api/auth/signup', {
+            fullName,
+            email,
+            password,
+            confirm_password: confirmPassword
+        });
         return response.data;
     },
 
-    confirmOtp: async (email, otp) => {
-        const response = await apiClient.post('/auth/confirm_otp', { email, otp });
+    // Confirm OTP
+    confirmOTP: async (email, otp) => {
+        const response = await apiClient.post('/api/auth/confirm', {
+            email,
+            otp
+        });
+
+        // If OTP confirmation returns token, handle login
+        if (response.data.token) {
+            authService.handleLogin(response.data);
+            setAuthToken(response.data.token);
+        }
+
         return response.data;
     },
 
+    // Request OTP
+    requestOTP: async (email) => {
+        const response = await apiClient.post('/api/auth/send-otp', {
+            email
+        });
+        return response.data;
+    },
+
+    // Reset password - Backend expects: email, otp, newPassword
+    resetPassword: async (email, otp, newPassword, confirmPassword) => {
+        const response = await apiClient.post('/api/auth/reset-password', {
+            email,
+            otp,
+            newPassword,
+            confirm_password: confirmPassword
+        });
+        return response.data;
+    },
+
+    // Change email - Backend expects: uid, newEmail
+    changeEmail: async (uid, newEmail, password) => {
+        const response = await apiClient.post('/api/auth/change-email', {
+            uid,
+            newEmail,
+            password
+        });
+
+        // Update user data if successful
+        if (response.data.success) {
+            authService.updateUserData({ email: newEmail });
+        }
+
+        return response.data;
+    },
+
+    // Change password
+    changePassword: async (userId, oldPassword, newPassword, confirmPassword) => {
+        const response = await apiClient.post('/api/auth/change-password', {
+            user_id: userId,
+            old_password: oldPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        });
+        return response.data;
+    },
+
+    // Change avatar
+    changeAvatar: async (userId, avatarFile) => {
+        const formData = new FormData();
+        formData.append('user_id', userId);
+        formData.append('avatar', avatarFile);
+
+        const response = await apiClient.post('/api/auth/change-avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        });
+
+        // Update user data if successful
+        if (response.data.success && response.data.avatar_url) {
+            authService.updateUserData({ avatar: response.data.avatar_url });
+        }
+
+        return response.data;
+    },
+
+    // Verify token
+    verifyToken: async (token) => {
+        const response = await apiClient.post('/api/auth/verify-token', {
+            token,
+            device: navigator.platform,
+            user_agent: navigator.userAgent,
+        });
+        return response.data;
+    },
+
+    // Refresh token
+    refreshToken: async (oldToken) => {
+        const response = await apiClient.post('/api/auth/refresh-token', {
+            token: oldToken,
+            device: navigator.platform,
+            user_agent: navigator.userAgent,
+        });
+
+        if (response.data.token) {
+            authService.setTokens(
+                response.data.token,
+                response.data.refresh_token || oldToken,
+                response.data.expires_in || 3600
+            );
+            setAuthToken(response.data.token);
+        }
+
+        return response.data;
+    },
+
+    // Logout
     logout: async () => {
-        if (localStorage.getItem('token') === null) {
-            return true;
+        const token = authService.getToken();
+
+        if (!token) {
+            return { success: true };
         }
 
-        const token = {
-            jti: localStorage.getItem('token'),
-            device: navigator.platform,
-            user_agent: navigator.userAgent,
-            user_id: sessionStorage.getItem('user_id'),
-        };
+        try {
+            const response = await apiClient.post('/api/auth/logout', {
+                jti: token,
+                device: navigator.platform,
+                user_agent: navigator.userAgent,
+            });
 
-        const response = await apiClient.post(`/auth/logout`, token );
+            authService.clearAuth();
+            setAuthToken(null);
 
-        setAuthToken(null);
-        sessionStorage.clear();
-        localStorage.removeItem('token');
-
-        return response.data;
+            return response.data;
+        } catch (error) {
+            // Clear auth even if logout request fails
+            authService.clearAuth();
+            setAuthToken(null);
+            throw error;
+        }
     },
-
-    renewToken: async () => {
-        const token = {
-            jti: localStorage.getItem('token'),
-            device: navigator.platform,
-            user_agent: navigator.userAgent,
-        };
-
-        const response = await apiClient.post('/auth/renew_token', token);
-
-        if (response.data.token) {
-            setAuthToken(response.data.token);
-            localStorage.setItem('token', response.data.token);
-        }
-
-        return response.data;
-    }
 };
 
-// Initialize the token from localStorage if it exists
-const storedToken = localStorage.getItem('token');
-if (storedToken) {
-    setAuthToken(storedToken);
-}
-
-// Axios interceptors for handling responses and errors
-apiClient.interceptors.response.use(
-    (response) => response,
-    (error) => {
-        if (error.response && error.response.status === 401) {
-            // Token might be expired or invalid
-            setAuthToken(null);
-            localStorage.removeItem('token');
-            // Optionally redirect to login page or show a message
-            console.error('Unauthorized: Token expired or invalid');
-        }
-        return Promise.reject(error);
-    }
-);
-
-export default apiClient;
+export default authApi;
