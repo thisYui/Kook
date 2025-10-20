@@ -37,6 +37,9 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Index Page first */}
+        <Route path="/" element={<IndexPage />} />
+
         {/* Public Only Routes - Redirect to home if already logged in */}
         <Route element={
           <PublicOnlyRoute redirectTo="/">
