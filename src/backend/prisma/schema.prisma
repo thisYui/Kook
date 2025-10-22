@@ -15,23 +15,26 @@ enum Role {
 }
 
 model User {
-  id                 String    @id @default(uuid()) @map("user_id") @db.Uuid
-  name               String    @db.VarChar(255)
-  email              String    @unique @db.VarChar(255)
-  password_hash      String    @db.VarChar(255)
-  avatar_url         String?   @db.Text
-  language           String?   @default("en") @db.VarChar(10)  // ISO 639-1 codes
-  theme              String?   @default("light") @db.VarChar(20)
-  bio                String?   @db.Text
-  role               Role      @default(USER)
-  is_verified        Boolean   @default(false)
-  is_disabled        Boolean   @default(false)
-  is_deleted         Boolean   @default(false)
-  last_login         DateTime?
-  last_active        DateTime?
-  created_at         DateTime  @default(now()) @db.Timestamp
-  updated_at         DateTime  @updatedAt @db.Timestamp
-  deleted_at         DateTime?
+  id                      String    @id @default(uuid()) @map("user_id") @db.Uuid
+  name                    String    @db.VarChar(255)
+  email                   String    @unique @db.VarChar(255)
+  password_hash           String    @db.VarChar(255)
+  avatar_url              String?   @db.Text
+  language                String?   @default("en") @db.VarChar(10)  // ISO 639-1 codes
+  theme                   String?   @default("light") @db.VarChar(20)
+  bio                     String?   @db.Text
+  count_finished_recipes  Int       @default(0)
+  count_posts             Int       @default(0)
+  count_followers         Int       @default(0)
+  role                    Role      @default(USER)
+  is_verified             Boolean   @default(false)
+  is_disabled             Boolean   @default(false)
+  is_deleted              Boolean   @default(false)
+  last_login              DateTime?
+  last_active             DateTime?
+  created_at              DateTime  @default(now()) @db.Timestamp
+  updated_at              DateTime  @updatedAt @db.Timestamp
+  deleted_at              DateTime?
 
   // Relations
   allergies     UserAllergy[]
@@ -59,10 +62,27 @@ model User {
   @@map("users")
 }
 
+enum Category {
+  VEGETABLES
+  MEAT_POULTRY
+  SEAFOOD
+  DAIRY_EGGS
+  GRAINS_LEGUMES
+  FRUITS
+  SPICES_HERBS
+  NUTS_SEEDS
+  BEVERAGES
+  BAKING_DESSERT
+  CANNED_PRESERVED
+  FROZEN
+  OTHERS
+  UNCATEGORIZED
+}
+
 model IngredientCatalog {
   ingredient_key String   @id @db.Text
   display_name   String   @db.VarChar(255)
-  category       String?  @db.VarChar(100)
+  category       Category @default(UNCATEGORIZED)
   is_active      Boolean  @default(true)
   created_at     DateTime @default(now()) @db.Timestamp
   updated_at     DateTime @updatedAt @db.Timestamp

@@ -245,14 +245,14 @@ async function hashPassword(password) {
  * Seed users
  */
 async function seedUsers() {
-    console.log('🌱 Starting user seeding...');
+    console.log('Starting user seeding...');
 
     try {
         // Check if users already exist
         const existingUsers = await prisma.user.count();
         if (existingUsers > 0) {
-            console.log(`⚠️  Database already has ${existingUsers} users. Skipping seed.`);
-            console.log('💡 To re-seed, please clear the User table first.');
+            console.log(`⚠Database already has ${existingUsers} users. Skipping seed.`);
+            console.log('To re-seed, please clear the User table first.');
             return;
         }
 
@@ -272,18 +272,18 @@ async function seedUsers() {
             });
 
             created++;
-            console.log(`✅ Created user: ${userInfo.email}`);
+            console.log(`Created user: ${userInfo.email}`);
         }
 
-        console.log(`\n✨ Successfully created ${created} users!`);
-        console.log('\n📋 User Summary:');
+        console.log(`\nSuccessfully created ${created} users!`);
+        console.log('\nUser Summary:');
         console.log(`   - Admins: ${users.filter(u => u.role === 'ADMIN').length}`);
         console.log(`   - Moderators: ${users.filter(u => u.role === 'MODERATOR').length}`);
         console.log(`   - Users: ${users.filter(u => u.role === 'USER').length}`);
         console.log(`   - Verified: ${users.filter(u => u.is_verified).length}`);
         console.log(`   - Unverified: ${users.filter(u => !u.is_verified).length}`);
 
-        console.log('\n🔑 Login Credentials:');
+        console.log('\nLogin Credentials:');
         console.log('   Admin: user1@kook.com / 123');
         console.log('   User Examples:');
         console.log('     - user2@kook.com / 123');
@@ -294,7 +294,7 @@ async function seedUsers() {
         console.log('   Email pattern: user[1-20]@kook.com');
 
     } catch (error) {
-        console.error('❌ Error seeding users:', error);
+        console.error('Error seeding users:', error);
         throw error;
     }
 }
@@ -310,7 +310,7 @@ async function main() {
 if (require.main === module) {
     main()
         .catch((error) => {
-            console.error('❌ Fatal error:', error);
+            console.error('Fatal error:', error);
             process.exit(1);
         })
         .finally(async () => {

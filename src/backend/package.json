@@ -16,8 +16,9 @@
     "prisma:format": "prisma format",
     "seed": "node seed.js",
     "db:reset": "npm run prisma:reset && npm run seed",
+    "db:init": "node src/db/init/init.js",
     "setup:prisma": "npm install prisma --save-dev && npm install @prisma/client && npm run prisma:init",
-    "setup:db": "npm run prisma:migrate && npm run prisma:generate"
+    "setup:db": "npm run prisma:migrate && npm run prisma:generate && npm run seed && npm run db:init"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
