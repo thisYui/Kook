@@ -225,22 +225,6 @@ Cấu trúc ví dụ:
 {
   "recipe_id": "uuid_recipe",
   "post_id": "uuid_post",
-  "ingredients": [
-    {
-      "group": "Phần bánh",
-      "items": [
-        {"name": "Bột mì", "quantity": "200g", "note": "rây mịn"},
-        {"name": "Trứng", "quantity": "2 quả"}
-      ]
-    },
-    {
-      "group": "Phần nhân",
-      "items": [
-        {"name": "Thịt băm", "quantity": "300g"},
-        {"name": "Hành tím", "quantity": "1 củ", "note": "băm nhỏ"}
-      ]
-    }
-  ],
   "steps": [
     {
       "order": 1,

@@ -1,52 +1,56 @@
 const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
+const authService = require('../services/auth/auth.services');
 
 async function login(req, res) {
-    const { email, password } = req.body;
+    const { email, password, rememberMe, jwtToken } = req.body;
 
     try {
-        // Validation
+        // Validate input
         if (!email || !password) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Email and password are required');
+            return ErrorResponse.send(
+                res,
+                ErrorCodes.VALIDATION_REQUIRED_FIELD,
+                'Email and password are required'
+            );
         }
 
-        // TODO: Check user exists
-        // const user = await prisma.user.findUnique({ where: { email } });
-        // if (!user) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_EMAIL_NOT_FOUND);
-        // }
+        // Validate email format
+        if (!authService.validateEmail(email)) {
+            return ErrorResponse.send(
+                res,
+                ErrorCodes.VALIDATION_EMAIL_INVALID,
+                'Invalid email format'
+            );
+        }
 
-        // TODO: Verify password
-        // const isValidPassword = await bcrypt.compare(password, user.password);
-        // if (!isValidPassword) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_INVALID_CREDENTIALS);
-        // }
+        // Device info from request
+        const deviceInfo = {
+            device: jwtToken?.device || req.headers['user-agent'],
+            userAgent: jwtToken?.user_agent || req.headers['user-agent'],
+            ip: req.ip,
+        };
 
-        // TODO: Check if account is verified
-        // if (!user.is_verified) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_ACCOUNT_NOT_VERIFIED);
-        // }
+        // Call auth service
+        const result = await authService.login(email, password, rememberMe, deviceInfo);
 
-        // TODO: Generate JWT token
-        // TODO: Save token to database
-        
-        res.status(200).json({
-            success: true,
-            message: 'Đăng nhập thành công!',
-            data: {
-                token: 'example_token',
-                user: { email }
-            }
-        });
+        // Return success response
+        res.status(200).json(result);
 
     } catch (error) {
-        logger.error('Lỗi khi đăng nhập:', error);
+        logger.error('Login controller error:', error);
+
+        // If it's an AppError, send it with the proper error code
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message, error.details);
+        }
+
         return ErrorResponse.sendServerError(res, error);
     }
 }
 
 async function signup(req, res) {
-    const { email, password, fullName } = req.body;
+    const { email, password, fullName, confirm_password } = req.body;
 
     try {
         // Validation
@@ -54,17 +58,28 @@ async function signup(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
         }
 
+        // Validate email
+        if (!authService.validateEmail(email)) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_EMAIL_INVALID);
+        }
+
+        // Check password match
+        if (password !== confirm_password) {
+            return ErrorResponse.send(res, ErrorCodes.AUTH_PASSWORD_MISMATCH);
+        }
+
+        // Validate password strength
+        const passwordValidation = authService.validatePasswordStrength(password);
+        if (!passwordValidation.isValid) {
+            return ErrorResponse.send(
+                res,
+                ErrorCodes.AUTH_WEAK_PASSWORD,
+                'Password is too weak',
+                passwordValidation.errors
+            );
+        }
+
         // TODO: Check email exists
-        // const existingUser = await prisma.user.findUnique({ where: { email } });
-        // if (existingUser) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_EMAIL_ALREADY_EXISTS);
-        // }
-
-        // TODO: Validate password strength
-        // if (password.length < 8) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_WEAK_PASSWORD);
-        // }
-
         // TODO: Hash password
         // TODO: Create user
         // TODO: Generate OTP
@@ -199,7 +214,10 @@ async function changePassword(req, res) {
         // TODO: Update user password
         // TODO: Invalidate all tokens except current
         
-        res.status(200).json({ message: 'Đổi mật khẩu thành công!' });
+        res.status(200).json({
+            success: true,
+            message: 'Đổi mật khẩu thành công!'
+        });
 
     } catch (error) {
         logger.error('Lỗi khi đổi mật khẩu:', error);
@@ -216,7 +234,10 @@ async function changeAvatar(req, res) {
         // TODO: Upload avatar to storage
         // TODO: Update user avatar_url
         
-        res.status(200).json({ message: 'Đổi avatar thành công!' });
+        res.status(200).json({
+            success: true,
+            message: 'Đổi avatar thành công!'
+        });
 
     } catch (error) {
         logger.error('Lỗi khi đổi avatar:', error);
@@ -225,39 +246,71 @@ async function changeAvatar(req, res) {
 }
 
 async function verifyToken(req, res) {
-    const { uid, token, ipAddress, userAgent } = req.body;
+    const { token } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Verify JWT token
-        // TODO: Check token not revoked
-        // TODO: Check token not expired
-        // TODO: Return user info
-        
-        res.status(200).json({ message: 'Token hợp lệ!' });
+        if (!token) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        }
+
+        // Verify token using auth service
+        const decoded = authService.verifyToken(token);
+
+        res.status(200).json({
+            success: true,
+            message: 'Token hợp lệ!',
+            data: decoded
+        });
 
     } catch (error) {
         logger.error('Lỗi khi xác thực token:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message);
+        }
+
+        return ErrorResponse.sendServerError(res, error);
     }
 }
 
 async function refreshToken(req, res) {
-    const { uid, refreshToken, ipAddress, userAgent } = req.body;
+    const { token } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Verify refresh token
-        // TODO: Check token not revoked
-        // TODO: Generate new access token
-        // TODO: Generate new refresh token
-        // TODO: Save new tokens to database
-        
-        res.status(200).json({ message: 'Làm mới token thành công!' });
+        if (!token) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        }
+
+        // Verify refresh token
+        const decoded = authService.verifyRefreshToken(token);
+
+        // Generate new tokens
+        const deviceInfo = {
+            device: req.body.device || req.headers['user-agent'],
+            userAgent: req.body.user_agent || req.headers['user-agent'],
+        };
+
+        const newToken = authService.generateToken(decoded.uid, deviceInfo);
+        const newRefreshToken = authService.generateRefreshToken(decoded.uid, deviceInfo);
+
+        res.status(200).json({
+            success: true,
+            message: 'Làm mới token thành công!',
+            data: {
+                token: newToken,
+                refresh_token: newRefreshToken,
+                expires_in: 3600,
+            }
+        });
 
     } catch (error) {
         logger.error('Lỗi khi làm mới token:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message);
+        }
+
+        return ErrorResponse.sendServerError(res, error);
     }
 }
 
@@ -269,11 +322,14 @@ async function logout(req, res) {
         // TODO: Revoke token in database
         // TODO: Clear session if any
         
-        res.status(200).json({ message: 'Đăng xuất thành công!' });
+        res.status(200).json({
+            success: true,
+            message: 'Đăng xuất thành công!'
+        });
 
     } catch (error) {
         logger.error('Lỗi khi đăng xuất:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        return ErrorResponse.sendServerError(res, error);
     }
 }
 
@@ -289,4 +345,4 @@ module.exports = {
     verifyToken,
     refreshToken,
     logout,
-}
+};

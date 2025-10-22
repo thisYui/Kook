@@ -155,7 +155,7 @@
 
 - **Acceptance**: pdf download thành công và format readable, images included.
 
-### 17. Challenge: tìm món từ ảnh / mô tả (community challenge)
+### 17. Question: tìm món từ ảnh / mô tả (community challenge)
 
 - **Mô tả**: chế độ post riêng: user đăng ảnh + mô tả, cộng đồng đoán món và gợi ý recipe. có voting cho gợi ý hay nhất.
 
@@ -196,3 +196,7 @@
 - **UI**: result card với tên, confidence, liên kết recipes, option report/feedback.
 
 - **Acceptance**: lên ít nhất 3 gợi ý recipe phù hợp; có feedback loop để improve model.
+
+
+# 22. Cho phép đăng nhập đa thiết bị
+# 23. Giữ phiên đăng nhập trên nhiều thiết bị

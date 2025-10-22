@@ -21,27 +21,11 @@ const stepSchema = new mongoose.Schema({
   tips: { type: [String], default: [] } // Tips for this specific step
 }, { _id: false });
 
-// Schema for ingredient items within a group
-const ingredientItemSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  quantity: { type: String, required: true },
-  note: { type: String }
-}, { _id: false });
-
-// Schema for ingredient groups
-const ingredientGroupSchema = new mongoose.Schema({
-  group: { type: String }, // e.g., "Phần bánh", "Phần nhân"
-  items: { type: [ingredientItemSchema], required: true }
-}, { _id: false });
-
 // Main recipe detail schema stored in MongoDB
 const recipeDetailSchema = new mongoose.Schema({
   // Use string UUIDs from the SQL side
   recipe_id: { type: String, required: true, unique: true, index: true },
   post_id: { type: String, required: true, index: true },
-
-  // Flexible ingredient structure with grouping
-  ingredients: { type: [ingredientGroupSchema], required: true, default: [] },
 
   // Step-by-step cooking instructions
   steps: { type: [stepSchema], required: true, default: [] },

@@ -8,8 +8,8 @@ export const authApi = {
         const body = {
             email,
             password,
-            remember_me: rememberMe,
-            jwt_token: {
+            rememberMe: rememberMe,
+            jwtToken: {
                 device: navigator.platform,
                 user_agent: navigator.userAgent,
             }
@@ -17,10 +17,27 @@ export const authApi = {
 
         const response = await apiClient.post('/api/auth/login', body);
 
-        if (response.data.token) {
-            // Use authService to handle login
+        // Only handle token if rememberMe is true and token exists
+        if (rememberMe && response.data.token) {
+            // Use authService to handle login with token
             authService.handleLogin(response.data);
             setAuthToken(response.data.token);
+        } else {
+            // Session-only login without token
+            // Store user info in sessionStorage instead of localStorage
+            if (response.data.user) {
+                sessionStorage.setItem('user', JSON.stringify(response.data.user));
+            }
+            // Clear any existing tokens
+            authService.logout();
+        }
+
+        if (response.data.uid) {
+            if (rememberMe) {
+                localStorage.setItem('uid', response.data.uid);
+            } else {
+                sessionStorage.setItem('uid', response.data.uid);
+            }
         }
 
         return response.data;

@@ -1,6 +1,6 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const userRepository = require('../../repositories/user.repository.prisma');
+const userRepository = require('../../db/repositories/user.repository.prisma');
+const jwtTokenService = require('./jwtToken.service');
 const { ErrorCodes } = require('../../utils/errorHandler');
 const { AppError } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
@@ -15,10 +15,11 @@ class AuthService {
      * Login user
      * @param {string} email - User email
      * @param {string} password - User password
-     * @param {Object} deviceInfo - Device information (platform, userAgent)
-     * @returns {Object} - User data and token
+     * @param {boolean} rememberMe - Remember me option
+     * @param {Object} deviceInfo - Device information (platform, userAgent, ip)
+     * @returns {Object} - User data and token (only if rememberMe is true)
      */
-    async login(email, password, deviceInfo = {}) {
+    async login(email, password, rememberMe = false, deviceInfo = {}) {
         try {
             // 1. Validate input
             if (!email || !password) {
@@ -42,62 +43,87 @@ class AuthService {
                 throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED);
             }
 
-            // 5. Check login attempts (rate limiting)
-            if (user.login_attempts >= 5) {
-                const lastAttempt = new Date(user.last_login_attempt);
-                const now = new Date();
-                const diffMinutes = (now - lastAttempt) / 1000 / 60;
-
-                // Block for 15 minutes after 5 failed attempts
-                if (diffMinutes < 15) {
-                    throw new AppError(
-                        ErrorCodes.AUTH_TOO_MANY_ATTEMPTS,
-                        `Too many login attempts. Please try again in ${Math.ceil(15 - diffMinutes)} minutes`
-                    );
-                }
-                // Reset attempts after 15 minutes
-                await userRepository.resetLoginAttempts(user.id);
-            }
-
-            // 6. Verify password
-            const isValidPassword = await bcrypt.compare(password, user.password);
+            // 5. Verify password (use password_hash from schema)
+            const isValidPassword = await bcrypt.compare(password, user.password_hash);
             if (!isValidPassword) {
-                // Increment failed login attempts
-                await userRepository.incrementLoginAttempts(user.id);
-
                 logger.warn(`Failed login attempt for user: ${email}`);
                 throw new AppError(ErrorCodes.AUTH_INVALID_CREDENTIALS);
             }
 
-            // 7. Reset login attempts on successful login
-            await userRepository.resetLoginAttempts(user.id);
-
-            // 8. Update last login time
+            // 6. Update last login time
             await userRepository.updateLastLogin(user.id);
 
-            // 9. Generate JWT token
-            const token = this.generateToken(user.id, deviceInfo);
-            const refreshToken = this.generateRefreshToken(user.id, deviceInfo);
+            // 7. Return user data (exclude password_hash)
+            const { password_hash: _, ...userWithoutPassword } = user;
 
-            // 10. Return user data (exclude password)
-            const { password: _, ...userWithoutPassword } = user;
-
-            logger.info(`User logged in successfully: ${email}`);
-
-            return {
+            // 8. Prepare response based on rememberMe option
+            const response = {
                 success: true,
-                token,
-                refresh_token: refreshToken,
-                expires_in: 3600, // 1 hour
+                uid: user.id,
                 user: userWithoutPassword,
+                remember_me: rememberMe
             };
+
+            // 9. Only generate and send tokens if rememberMe is true
+            if (rememberMe) {
+                // Create token pair (access + refresh) using JWT service
+                const tokenPair = await jwtTokenService.createTokenPair(user.id, deviceInfo);
+
+                response.token = tokenPair.accessToken;
+                response.refresh_token = tokenPair.refreshToken;
+                response.expires_in = tokenPair.expiresIn;
+
+                logger.info(`User logged in successfully with token: ${email}`);
+            } else {
+                logger.info(`User logged in successfully without token (session only): ${email}`);
+            }
+
+            return response;
 
         } catch (error) {
             if (error instanceof AppError) {
                 throw error;
             }
+
             logger.error('Login error:', error);
             throw new AppError(ErrorCodes.SERVER_ERROR, 'Login failed');
+        }
+    }
+
+    /**
+     * Logout user - revoke token
+     * @param {string} jti - JWT ID
+     * @returns {Object} - Success response
+     */
+    async logout(jti) {
+        try {
+            if (!jti) {
+                return { success: true, message: 'No token to revoke' };
+            }
+
+            await jwtTokenService.revokeToken(jti);
+            return { success: true, message: 'Logged out successfully' };
+        } catch (error) {
+            logger.error('Logout error:', error);
+            throw new AppError(ErrorCodes.SERVER_ERROR, 'Logout failed');
+        }
+    }
+
+    /**
+     * Refresh access token
+     * @param {string} refreshToken - Refresh token
+     * @param {Object} deviceInfo - Device information
+     * @returns {Object} - New access token
+     */
+    async refreshToken(refreshToken, deviceInfo = {}) {
+        try {
+            return await jwtTokenService.refreshAccessToken(refreshToken, deviceInfo);
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Refresh token error:', error);
+            throw new AppError(ErrorCodes.AUTH_REFRESH_TOKEN_INVALID, 'Failed to refresh token');
         }
     }
 
@@ -122,75 +148,12 @@ class AuthService {
     }
 
     /**
-     * Generate JWT access token
-     * @param {number} userId - User ID
-     * @param {Object} deviceInfo - Device information
-     * @returns {string} - JWT token
-     */
-    generateToken(userId, deviceInfo = {}) {
-        const payload = {
-            uid: userId,
-            type: 'access',
-            device: deviceInfo.device || 'unknown',
-            userAgent: deviceInfo.userAgent || 'unknown',
-            iat: Math.floor(Date.now() / 1000),
-        };
-
-        return jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
-            expiresIn: '1h', // 1 hour
-        });
-    }
-
-    /**
-     * Generate JWT refresh token
-     * @param {number} userId - User ID
-     * @param {Object} deviceInfo - Device information
-     * @returns {string} - Refresh token
-     */
-    generateRefreshToken(userId, deviceInfo = {}) {
-        const payload = {
-            uid: userId,
-            type: 'refresh',
-            device: deviceInfo.device || 'unknown',
-            userAgent: deviceInfo.userAgent || 'unknown',
-            iat: Math.floor(Date.now() / 1000),
-        };
-
-        return jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key', {
-            expiresIn: '7d', // 7 days
-        });
-    }
-
-    /**
      * Verify JWT token
      * @param {string} token - JWT token
      * @returns {Object} - Decoded token payload
      */
-    verifyToken(token) {
-        try {
-            return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                throw new AppError(ErrorCodes.AUTH_TOKEN_EXPIRED);
-            }
-            throw new AppError(ErrorCodes.AUTH_INVALID_TOKEN);
-        }
-    }
-
-    /**
-     * Verify refresh token
-     * @param {string} token - Refresh token
-     * @returns {Object} - Decoded token payload
-     */
-    verifyRefreshToken(token) {
-        try {
-            return jwt.verify(token, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key');
-        } catch (error) {
-            if (error.name === 'TokenExpiredError') {
-                throw new AppError(ErrorCodes.AUTH_REFRESH_TOKEN_EXPIRED);
-            }
-            throw new AppError(ErrorCodes.AUTH_REFRESH_TOKEN_INVALID);
-        }
+    async verifyToken(token) {
+        return await jwtTokenService.validateToken(token);
     }
 
     /**
@@ -234,4 +197,3 @@ class AuthService {
 }
 
 module.exports = new AuthService();
-

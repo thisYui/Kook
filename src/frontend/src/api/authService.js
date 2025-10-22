@@ -1,12 +1,10 @@
 /**
  * Authentication Service
  * Handles token management, refresh token, and auto-login
+ * Supports both persistent (localStorage) and session-only (sessionStorage) authentication
  */
 
-const TOKEN_KEY = 'token';
-const REFRESH_TOKEN_KEY = 'refresh_token';
-const TOKEN_EXPIRY_KEY = 'token_expiry';
-const USER_DATA_KEY = 'user_data';
+import { STORAGE_KEYS } from '../constants';
 
 class AuthService {
     constructor() {
@@ -16,17 +14,31 @@ class AuthService {
     }
 
     /**
+     * Get storage (prioritize localStorage, fallback to sessionStorage)
+     */
+    getStorage() {
+        // Check if token exists in localStorage (rememberMe = true)
+        if (localStorage.getItem(STORAGE_KEYS.TOKEN)) {
+            return localStorage;
+        }
+        // Otherwise use sessionStorage (rememberMe = false)
+        return sessionStorage;
+    }
+
+    /**
      * Save authentication tokens
      */
-    setTokens(token, refreshToken, expiresIn = 3600) {
-        localStorage.setItem(TOKEN_KEY, token);
+    setTokens(token, refreshToken, expiresIn = 3600, useLocalStorage = true) {
+        const storage = useLocalStorage ? localStorage : sessionStorage;
+
+        storage.setItem(STORAGE_KEYS.TOKEN, token);
         if (refreshToken) {
-            localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+            storage.setItem(STORAGE_KEYS.REFRESH_TOKEN, refreshToken);
         }
 
         // Calculate expiry time (current time + expiresIn seconds - 5 minutes buffer)
         const expiryTime = Date.now() + (expiresIn * 1000) - (5 * 60 * 1000);
-        localStorage.setItem(TOKEN_EXPIRY_KEY, expiryTime.toString());
+        storage.setItem(STORAGE_KEYS.TOKEN_EXPIRY, expiryTime.toString());
 
         // Schedule token refresh
         this.scheduleTokenRefresh(expiryTime);
@@ -36,21 +48,21 @@ class AuthService {
      * Get current access token
      */
     getToken() {
-        return localStorage.getItem(TOKEN_KEY);
+        return localStorage.getItem(STORAGE_KEYS.TOKEN) || sessionStorage.getItem(STORAGE_KEYS.TOKEN);
     }
 
     /**
      * Get refresh token
      */
     getRefreshToken() {
-        return localStorage.getItem(REFRESH_TOKEN_KEY);
+        return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     }
 
     /**
      * Get token expiry time
      */
     getTokenExpiry() {
-        const expiry = localStorage.getItem(TOKEN_EXPIRY_KEY);
+        const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY) || sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
         return expiry ? parseInt(expiry, 10) : null;
     }
 
@@ -64,43 +76,73 @@ class AuthService {
     }
 
     /**
-     * Check if user is logged in
+     * Check if user is logged in (with or without token)
      */
     isLoggedIn() {
+        // Check token-based authentication
         const token = this.getToken();
-        return !!token && !this.isTokenExpired();
+        if (token && !this.isTokenExpired()) {
+            return true;
+        }
+
+        // Check session-based authentication (no token, but user data exists)
+        const sessionUser = sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
+        const sessionUid = sessionStorage.getItem(STORAGE_KEYS.UID);
+
+        return !!(sessionUser || sessionUid);
     }
 
     /**
      * Save user data
      */
-    setUserData(userData) {
-        localStorage.setItem(USER_DATA_KEY, JSON.stringify(userData));
+    setUserData(userData, useLocalStorage = true) {
+        const storage = useLocalStorage ? localStorage : sessionStorage;
+        storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
     }
 
     /**
      * Get user data
      */
     getUserData() {
-        const data = localStorage.getItem(USER_DATA_KEY);
+        const data = localStorage.getItem(STORAGE_KEYS.USER_DATA) || sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
         return data ? JSON.parse(data) : null;
+    }
+
+    /**
+     * Get user ID
+     */
+    getUserId() {
+        return localStorage.getItem(STORAGE_KEYS.UID) || sessionStorage.getItem(STORAGE_KEYS.UID);
     }
 
     /**
      * Clear all authentication data
      */
     clearAuth() {
-        localStorage.removeItem(TOKEN_KEY);
-        localStorage.removeItem(REFRESH_TOKEN_KEY);
-        localStorage.removeItem(TOKEN_EXPIRY_KEY);
-        localStorage.removeItem(USER_DATA_KEY);
-        sessionStorage.clear();
+        localStorage.removeItem(STORAGE_KEYS.TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        localStorage.removeItem(STORAGE_KEYS.UID);
+
+        sessionStorage.removeItem(STORAGE_KEYS.TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+        sessionStorage.removeItem(STORAGE_KEYS.USER_DATA);
+        sessionStorage.removeItem(STORAGE_KEYS.UID);
 
         // Cancel scheduled refresh
         if (this.refreshTokenTimeout) {
             clearTimeout(this.refreshTokenTimeout);
             this.refreshTokenTimeout = null;
         }
+    }
+
+    /**
+     * Logout - clear all auth data
+     */
+    logout() {
+        this.clearAuth();
     }
 
     /**
@@ -214,52 +256,35 @@ class AuthService {
             refresh_token,
             expires_in,
             user,
+            remember_me,
             ...rest
         } = loginResponse;
 
-        this.setTokens(token, refresh_token, expires_in);
+        // Only set tokens if they exist (rememberMe = true)
+        if (token) {
+            this.setTokens(token, refresh_token, expires_in, remember_me);
+        }
 
         if (user) {
-            this.setUserData(user);
+            this.setUserData(user, remember_me);
         }
 
         return { success: true, user };
     }
 
     /**
-     * Handle logout
-     */
-    async handleLogout() {
-        try {
-            const { authApi } = await import('./auth');
-            await authApi.logout();
-        } catch (error) {
-            console.error('Logout error:', error);
-        } finally {
-            this.clearAuth();
-        }
-    }
-
-    /**
-     * Get current user ID
-     */
-    getCurrentUserId() {
-        const userData = this.getUserData();
-        return userData?.id || userData?.uid || null;
-    }
-
-    /**
-     * Update user data partially
+     * Update user data
      */
     updateUserData(updates) {
-        const currentData = this.getUserData() || {};
-        const newData = { ...currentData, ...updates };
-        this.setUserData(newData);
-        return newData;
+        const currentUser = this.getUserData();
+        if (currentUser) {
+            const updatedUser = { ...currentUser, ...updates };
+            const storage = this.getStorage();
+            storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+        }
     }
 }
 
 // Export singleton instance
 const authService = new AuthService();
 export default authService;
-

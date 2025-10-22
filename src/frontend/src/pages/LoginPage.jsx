@@ -2,19 +2,22 @@ import React, { useState } from "react";
 import Label from "../components/Label.jsx"
 import PasswordLabel from "../components/PasswordLabel.jsx";
 import Button from "../components/Button.jsx";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
+import { authApi } from '../api/auth';
 import '../i18n.jsx'
 
 
 export default function LoginPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     remember: false
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -25,7 +28,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     let currentErrors = {};
 
@@ -39,7 +42,46 @@ export default function LoginPage() {
     setErrors(currentErrors);
     if (Object.keys(currentErrors).length > 0) return;
 
-    console.log("Login successful! Data:", formData);
+    setIsLoading(true);
+    setErrors({});
+
+    try {
+      // Call login API with rememberMe parameter
+      const response = await authApi.login(
+        formData.email,
+        formData.password,
+        formData.remember // Pass remember checkbox value
+      );
+
+      if (response.success) {
+        console.log("Login successful!", response);
+
+        // Show appropriate message based on remember option
+        if (formData.remember) {
+          console.log("Token saved - you will stay logged in");
+        } else {
+          console.log("Session only - you will be logged out when browser closes");
+        }
+
+        // Redirect to home page
+        navigate('/');
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+
+      // Handle error codes from backend
+      const errorCode = error.response?.data?.error_code;
+      const errorMessage = error.response?.data?.message;
+
+      if (errorCode) {
+        // Translate error code using i18n
+        setErrors({ general: t(`errors.${errorCode}`, { defaultValue: errorMessage }) });
+      } else {
+        setErrors({ general: t("errors.AUTH_LOGIN_FAILED", { defaultValue: "Login failed" }) });
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -80,9 +122,10 @@ export default function LoginPage() {
         />
 
         <Button
-          name={t("login.submit")}
+          name={isLoading ? t("login.loading") : t("login.submit")}
           type="submit"
-          className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full text-lg transition duration-200"
+          disabled={isLoading}
+          className="w-full py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-full text-lg transition duration-200 disabled:bg-gray-400 disabled:cursor-not-allowed"
         />
 
         {errors.general && (
