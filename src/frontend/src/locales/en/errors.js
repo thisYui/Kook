@@ -22,6 +22,8 @@ export const errorMessages = {
     AUTH_1016: "Session has expired. Please login again",
     AUTH_1017: "Unauthorized access",
     AUTH_1018: "Current password is incorrect",
+    AUTH_1019: "OTP resend request too soon. Please wait before requesting a new code",
+    AUTH_1020: "Exceeded maximum OTP attempts. Please request a new code",
 
     // User Errors (1100-1199)
     USER_1101: "User not found",

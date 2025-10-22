@@ -8,11 +8,7 @@ export const authApi = {
         const body = {
             email,
             password,
-            rememberMe: rememberMe,
-            jwtToken: {
-                device: navigator.platform,
-                user_agent: navigator.userAgent,
-            }
+            rememberMe: rememberMe
         };
 
         const response = await apiClient.post('/api/auth/login', body);
@@ -44,12 +40,11 @@ export const authApi = {
     },
 
     // Register new user - Backend expects: email, password, fullName
-    signup: async (fullName, email, password, confirmPassword) => {
+    signup: async (fullName, email, password) => {
         const response = await apiClient.post('/api/auth/signup', {
             fullName,
             email,
             password,
-            confirm_password: confirmPassword
         });
         return response.data;
     },
@@ -61,10 +56,16 @@ export const authApi = {
             otp
         });
 
-        // If OTP confirmation returns token, handle login
-        if (response.data.token) {
-            authService.handleLogin(response.data);
-            setAuthToken(response.data.token);
+        // Backend returns nested data: response.data.data.token
+        if (response.data.data && response.data.data.token) {
+            authService.handleLogin({
+                token: response.data.data.token,
+                refresh_token: response.data.data.refresh_token,
+                expires_in: response.data.data.expires_in,
+                uid: response.data.data.uid,
+                user: response.data.data.user,
+            });
+            setAuthToken(response.data.data.token);
         }
 
         return response.data;
@@ -75,64 +76,6 @@ export const authApi = {
         const response = await apiClient.post('/api/auth/send-otp', {
             email
         });
-        return response.data;
-    },
-
-    // Reset password - Backend expects: email, otp, newPassword
-    resetPassword: async (email, otp, newPassword, confirmPassword) => {
-        const response = await apiClient.post('/api/auth/reset-password', {
-            email,
-            otp,
-            newPassword,
-            confirm_password: confirmPassword
-        });
-        return response.data;
-    },
-
-    // Change email - Backend expects: uid, newEmail
-    changeEmail: async (uid, newEmail, password) => {
-        const response = await apiClient.post('/api/auth/change-email', {
-            uid,
-            newEmail,
-            password
-        });
-
-        // Update user data if successful
-        if (response.data.success) {
-            authService.updateUserData({ email: newEmail });
-        }
-
-        return response.data;
-    },
-
-    // Change password
-    changePassword: async (userId, oldPassword, newPassword, confirmPassword) => {
-        const response = await apiClient.post('/api/auth/change-password', {
-            user_id: userId,
-            old_password: oldPassword,
-            new_password: newPassword,
-            confirm_password: confirmPassword
-        });
-        return response.data;
-    },
-
-    // Change avatar
-    changeAvatar: async (userId, avatarFile) => {
-        const formData = new FormData();
-        formData.append('user_id', userId);
-        formData.append('avatar', avatarFile);
-
-        const response = await apiClient.post('/api/auth/change-avatar', formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            }
-        });
-
-        // Update user data if successful
-        if (response.data.success && response.data.avatar_url) {
-            authService.updateUserData({ avatar: response.data.avatar_url });
-        }
-
         return response.data;
     },
 
@@ -154,13 +97,14 @@ export const authApi = {
             user_agent: navigator.userAgent,
         });
 
-        if (response.data.token) {
+        // Backend returns: response.data.data.token (nested)
+        if (response.data.data && response.data.data.token) {
             authService.setTokens(
-                response.data.token,
-                response.data.refresh_token || oldToken,
-                response.data.expires_in || 3600
+                response.data.data.token,
+                oldToken, // Keep old refresh token
+                response.data.data.expires_in || 3600
             );
-            setAuthToken(response.data.token);
+            setAuthToken(response.data.data.token);
         }
 
         return response.data;
@@ -176,9 +120,7 @@ export const authApi = {
 
         try {
             const response = await apiClient.post('/api/auth/logout', {
-                jti: token,
-                device: navigator.platform,
-                user_agent: navigator.userAgent,
+                token: token,  // ✅ Changed from 'jti' to 'token'
             });
 
             authService.clearAuth();

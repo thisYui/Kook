@@ -1,4 +1,5 @@
 const logger = require('../utils/logger');
+const {ErrorResponse, ErrorCodes} = require("../utils/errorHandler");
 
 async function changeLanguage(req, res) {
     const { uid, language } = req.body;
@@ -103,6 +104,98 @@ async function deleteUserAccount(req, res) {
     }
 }
 
+
+async function resetPassword(req, res) {
+    const { email, otp, newPassword } = req.body;
+
+    try {
+        if (!email || !otp || !newPassword) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        }
+
+        // TODO: Validate input
+        // TODO: Check OTP valid
+        // TODO: Check OTP expired
+        // TODO: Hash new password
+        // TODO: Update user password
+        // TODO: Invalidate all tokens
+
+        res.status(200).json({
+            success: true,
+            message: 'Đặt lại mật khẩu thành công!'
+        });
+
+    } catch (error) {
+        logger.error('Lỗi khi đặt lại mật khẩu:', error);
+        return ErrorResponse.sendServerError(res, error);
+    }
+}
+
+async function changeEmail(req, res) {
+    const { uid, newEmail } = req.body;
+
+    try {
+        if (!uid || !newEmail) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        }
+
+        // TODO: Validate input
+        // TODO: Check user exists
+        // TODO: Check new email not exists
+        // TODO: Update email
+
+        res.status(200).json({
+            success: true,
+            message: 'Đổi email thành công!'
+        });
+    } catch (error) {
+        logger.error('Lỗi khi đổi email:', error);
+        return ErrorResponse.sendServerError(res, error);
+    }
+}
+
+async function changePassword(req, res) {
+    const { uid, oldPassword, newPassword } = req.body;
+
+    try {
+        // TODO: Validate input
+        // TODO: Check user exists
+        // TODO: Verify old password
+        // TODO: Hash new password
+        // TODO: Update user password
+        // TODO: Invalidate all tokens except current
+
+        res.status(200).json({
+            success: true,
+            message: 'Đổi mật khẩu thành công!'
+        });
+
+    } catch (error) {
+        logger.error('Lỗi khi đổi mật khẩu:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+    }
+}
+
+async function changeAvatar(req, res) {
+    const { uid, avatarData, formatFile } = req.body;
+
+    try {
+        // TODO: Validate input
+        // TODO: Check user exists
+        // TODO: Upload avatar to storage
+        // TODO: Update user avatar_url
+
+        res.status(200).json({
+            success: true,
+            message: 'Đổi avatar thành công!'
+        });
+
+    } catch (error) {
+        logger.error('Lỗi khi đổi avatar:', error);
+        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+    }
+}
+
 async function showUserNotebook(req, res) {
     const { uid } = req.body;
 
@@ -175,6 +268,10 @@ module.exports = {
     getUserProfile,
     markNotificationsSeen,
     deleteUserAccount,
+    resetPassword,
+    changeEmail,
+    changePassword,
+    changeAvatar,
     showUserNotebook,
     overviewUserMealPlans,
     showUserMealPlans,

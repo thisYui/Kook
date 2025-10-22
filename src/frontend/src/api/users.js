@@ -58,6 +58,64 @@ export const usersApi = {
         return response.data;
     },
 
+    // Reset password - Backend expects: email, otp, newPassword
+    resetPassword: async (email, otp, newPassword, confirmPassword) => {
+        const response = await apiClient.post('/api/auth/reset-password', {
+            email,
+            otp,
+            newPassword,
+            confirm_password: confirmPassword
+        });
+        return response.data;
+    },
+
+    // Change email - Backend expects: uid, newEmail
+    changeEmail: async (uid, newEmail, password) => {
+        const response = await apiClient.post('/api/auth/change-email', {
+            uid,
+            newEmail,
+            password
+        });
+
+        // Update user data if successful
+        if (response.data.success) {
+            authService.updateUserData({ email: newEmail });
+        }
+
+        return response.data;
+    },
+
+    // Change password
+    changePassword: async (userId, oldPassword, newPassword, confirmPassword) => {
+        const response = await apiClient.post('/api/auth/change-password', {
+            user_id: userId,
+            old_password: oldPassword,
+            new_password: newPassword,
+            confirm_password: confirmPassword
+        });
+        return response.data;
+    },
+
+    // Change avatar
+    changeAvatar: async (userId, avatarFile) => {
+        const formData = new FormData();
+        formData.append('user_id', userId);
+        formData.append('avatar', avatarFile);
+
+        const response = await apiClient.post('/api/auth/change-avatar', formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            }
+        });
+
+        // Update user data if successful
+        if (response.data.success && response.data.avatar_url) {
+            authService.updateUserData({ avatar: response.data.avatar_url });
+        }
+
+        return response.data;
+    },
+
     // Show user notebook - Backend expects: uid
     showUserNotebook: async (uid, page = 1, limit = 20) => {
         const response = await apiClient.post('/api/users/show-notebook', {

@@ -3,6 +3,12 @@ const crypto = require('crypto');
 const jwtTokenRepository = require('../../db/repositories/jwtToken.repository');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const {
+  JWT_ACCESS_TOKEN_EXPIRE,
+  JWT_REFRESH_TOKEN_EXPIRE,
+  JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS
+} = require('../../constants');
 
 /**
  * JWT Token Service
@@ -19,7 +25,6 @@ class JwtTokenService {
     generateAccessToken(userId, deviceInfo = {}) {
         const jti = crypto.randomBytes(32).toString('hex');
         const iat = Math.floor(Date.now() / 1000);
-        const exp = iat + 3600; // 1 hour
 
         const payload = {
             uid: userId,
@@ -27,13 +32,14 @@ class JwtTokenService {
             jti: jti,
             device: deviceInfo.device || 'unknown',
             userAgent: deviceInfo.userAgent || 'unknown',
-            iat: iat,
-            exp: exp,
         };
 
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
-            expiresIn: '1h',
+            expiresIn: JWT_ACCESS_TOKEN_EXPIRE,
         });
+
+        // Calculate expiration time
+        const exp = iat + JWT_ACCESS_TOKEN_EXPIRE_SECONDS;
 
         return {
             token,
@@ -51,7 +57,6 @@ class JwtTokenService {
     generateRefreshToken(userId, deviceInfo = {}) {
         const jti = crypto.randomBytes(32).toString('hex');
         const iat = Math.floor(Date.now() / 1000);
-        const exp = iat + (7 * 24 * 3600); // 7 days
 
         const payload = {
             uid: userId,
@@ -59,13 +64,14 @@ class JwtTokenService {
             jti: jti,
             device: deviceInfo.device || 'unknown',
             userAgent: deviceInfo.userAgent || 'unknown',
-            iat: iat,
-            exp: exp,
         };
 
         const token = jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key', {
-            expiresIn: '7d',
+            expiresIn: JWT_REFRESH_TOKEN_EXPIRE,
         });
+
+        // Calculate expiration time
+        const exp = iat + JWT_REFRESH_TOKEN_EXPIRE_SECONDS;
 
         return {
             token,
@@ -144,7 +150,7 @@ class JwtTokenService {
             return {
                 accessToken: accessTokenData.token,
                 refreshToken: refreshTokenData.token,
-                expiresIn: 3600,
+                expiresIn: JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
             };
         } catch (error) {
             logger.error('Failed to create token pair:', error);
@@ -235,7 +241,7 @@ class JwtTokenService {
             return {
                 success: true,
                 token: newAccessToken.token,
-                expiresIn: 3600,
+                expiresIn: JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
             };
         } catch (error) {
             if (error instanceof AppError) {
@@ -309,4 +315,3 @@ class JwtTokenService {
 }
 
 module.exports = new JwtTokenService();
-

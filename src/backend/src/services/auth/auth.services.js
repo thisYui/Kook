@@ -4,6 +4,7 @@ const jwtTokenService = require('./jwtToken.service');
 const { ErrorCodes } = require('../../utils/errorHandler');
 const { AppError } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const { BCRYPT_SALT_ROUNDS } = require('../../constants');
 
 /**
  * Auth Service
@@ -143,7 +144,7 @@ class AuthService {
      * @returns {string} - Hashed password
      */
     async hashPassword(password) {
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
         return await bcrypt.hash(password, salt);
     }
 

@@ -22,6 +22,8 @@ export const errorMessages = {
     AUTH_1016: "Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại",
     AUTH_1017: "Truy cập không được phép",
     AUTH_1018: "Mật khẩu hiện tại không đúng",
+    AUTH_1019: "Yêu cầu gửi lại OTP quá sớm. Vui lòng chờ trước khi yêu cầu mã mới",
+    AUTH_1020: "Đã vượt quá số lần thử mã OTP. Vui lòng yêu cầu mã mới",
 
     // User Errors (1100-1199)
     USER_1101: "Không tìm thấy người dùng",

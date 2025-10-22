@@ -23,6 +23,8 @@ const ErrorCodes = {
     AUTH_SESSION_EXPIRED: 'AUTH_1016',
     AUTH_UNAUTHORIZED: 'AUTH_1017',
     AUTH_OLD_PASSWORD_INCORRECT: 'AUTH_1018',
+    AUTH_OTP_RESEND_TOO_SOON: 'AUTH_1019',
+    AUTH_OTP_MAX_ATTEMPTS: 'AUTH_1020',
 
     // User Errors (1100-1199)
     USER_NOT_FOUND: 'USER_1101',
@@ -175,6 +177,7 @@ const ErrorStatusCodes = {
     [ErrorCodes.AUTH_OTP_INVALID]: 422,
     [ErrorCodes.AUTH_OTP_EXPIRED]: 422,
     [ErrorCodes.AUTH_OTP_ALREADY_USED]: 422,
+    [ErrorCodes.AUTH_OTP_RESEND_TOO_SOON]: 422,
     [ErrorCodes.AUTH_OLD_PASSWORD_INCORRECT]: 422,
     [ErrorCodes.AUTH_ACCOUNT_NOT_VERIFIED]: 422,
     [ErrorCodes.FILE_TYPE_INVALID]: 422,
@@ -194,6 +197,7 @@ const ErrorStatusCodes = {
     [ErrorCodes.RATE_LIMIT_EXCEEDED]: 429,
     [ErrorCodes.TOO_MANY_REQUESTS]: 429,
     [ErrorCodes.AUTH_TOO_MANY_ATTEMPTS]: 429,
+    [ErrorCodes.AUTH_OTP_MAX_ATTEMPTS]: 429,
 
     // 500 Internal Server Error
     [ErrorCodes.SERVER_ERROR]: 500,
@@ -217,4 +221,3 @@ module.exports = {
     ErrorCodes,
     ErrorStatusCodes,
 };
-

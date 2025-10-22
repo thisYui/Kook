@@ -1,9 +1,13 @@
 const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
 const authService = require('../services/auth/auth.services');
+const otpService = require('../services/auth/otp.services');
+const userRepository = require('../db/repositories/user.repository.prisma');
+const jwtTokenService = require('../services/auth/jwtToken.service');
+const { JWT_ACCESS_TOKEN_EXPIRE_SECONDS } = require('../constants');
 
 async function login(req, res) {
-    const { email, password, rememberMe, jwtToken } = req.body;
+    const { email, password, rememberMe } = req.body;
 
     try {
         // Validate input
@@ -24,11 +28,11 @@ async function login(req, res) {
             );
         }
 
-        // Device info from request
+        // Device info from request headers and IP
         const deviceInfo = {
-            device: jwtToken?.device || req.headers['user-agent'],
-            userAgent: jwtToken?.user_agent || req.headers['user-agent'],
-            ip: req.ip,
+            device: req.headers['user-agent'] || 'unknown',
+            userAgent: req.headers['user-agent'] || 'unknown',
+            ip: req.ip || req.connection.remoteAddress || 'unknown',
         };
 
         // Call auth service
@@ -50,7 +54,7 @@ async function login(req, res) {
 }
 
 async function signup(req, res) {
-    const { email, password, fullName, confirm_password } = req.body;
+    const { email, password, fullName } = req.body;
 
     try {
         // Validation
@@ -61,11 +65,6 @@ async function signup(req, res) {
         // Validate email
         if (!authService.validateEmail(email)) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_EMAIL_INVALID);
-        }
-
-        // Check password match
-        if (password !== confirm_password) {
-            return ErrorResponse.send(res, ErrorCodes.AUTH_PASSWORD_MISMATCH);
         }
 
         // Validate password strength
@@ -79,19 +78,45 @@ async function signup(req, res) {
             );
         }
 
-        // TODO: Check email exists
-        // TODO: Hash password
-        // TODO: Create user
-        // TODO: Generate OTP
-        // TODO: Send OTP email
-        
-        res.status(200).json({
+        // Check email exists
+        const emailExists = await userRepository.existsByEmail(email);
+        if (emailExists) {
+            return ErrorResponse.send(res, ErrorCodes.AUTH_EMAIL_ALREADY_EXISTS);
+        }
+
+        // Hash password
+        const hashedPassword = await authService.hashPassword(password);
+
+        // Create user (unverified)
+        const newUser = await userRepository.create({
+            name: fullName,
+            email: email,
+            password_hash: hashedPassword,
+            is_verified: false,
+        });
+
+        // Generate OTP
+        const otpData = otpService.createOTP(email);
+
+        // TODO: Send OTP email (implement email service later)
+        logger.info(`OTP generated for ${email}: ${otpData.otp}`);
+
+        res.status(201).json({
             success: true,
-            message: 'Chờ mã xác nhận!'
+            message: 'Registration successful! Please check your email for OTP.',
+            data: {
+                email: email,
+                expires_in: otpData.expires_in,
+            }
         });
 
     } catch (error) {
-        logger.error('Lỗi khi tạo tài khoản:', error);
+        logger.error('Signup error:', error);
+
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message, error.details);
+        }
+
         return ErrorResponse.sendServerError(res, error);
     }
 }
@@ -104,27 +129,62 @@ async function confirmOTP(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
         }
 
-        // TODO: Validate input
-        // TODO: Check OTP valid
-        // if (!isValidOTP) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_OTP_INVALID);
-        // }
+        // Validate email format
+        if (!authService.validateEmail(email)) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_EMAIL_INVALID);
+        }
 
-        // TODO: Check OTP expired
-        // if (isExpired) {
-        //     return ErrorResponse.send(res, ErrorCodes.AUTH_OTP_EXPIRED);
-        // }
+        // Verify OTP
+        const isValid = otpService.verifyOTP(email, otp);
 
-        // TODO: Activate user account
-        // TODO: Generate JWT token
-        
+        if (!isValid) {
+            return ErrorResponse.send(res, ErrorCodes.AUTH_OTP_INVALID);
+        }
+
+        // Find user by email
+        const user = await userRepository.findByEmail(email);
+        if (!user) {
+            return ErrorResponse.send(res, ErrorCodes.USER_NOT_FOUND);
+        }
+
+        // Activate user account
+        await userRepository.verifyUser(user.id);
+
+        // Generate JWT tokens for automatic login
+        const deviceInfo = {
+            device: req.headers['user-agent'],
+            userAgent: req.headers['user-agent'],
+            ip: req.ip,
+        };
+
+        const tokenPair = await jwtTokenService.createTokenPair(user.id, deviceInfo);
+
+        logger.info(`User verified successfully: ${email}`);
+
         res.status(200).json({
             success: true,
-            message: 'Xác nhận thành công!'
+            message: 'Email verified successfully!',
+            data: {
+                uid: user.id,
+                token: tokenPair.accessToken,
+                refresh_token: tokenPair.refreshToken,
+                expires_in: tokenPair.expiresIn,
+                user: {
+                    id: user.id,
+                    name: user.name,
+                    email: user.email,
+                    avatar_url: user.avatar_url,
+                }
+            }
         });
 
     } catch (error) {
-        logger.error('Lỗi khi xác nhận OTP:', error);
+        logger.error('Confirm OTP error:', error);
+
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message, error.details);
+        }
+
         return ErrorResponse.sendServerError(res, error);
     }
 }
@@ -137,111 +197,50 @@ async function requestOTP(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_EMAIL_INVALID);
         }
 
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Generate new OTP
-        // TODO: Send OTP email
-        // TODO: Save OTP to database
-        
-        res.status(200).json({
-            success: true,
-            message: 'Đã gửi mã OTP!'
-        });
-
-    } catch (error) {
-        logger.error('Lỗi khi gửi OTP:', error);
-        return ErrorResponse.sendServerError(res, error);
-    }
-}
-
-async function resetPassword(req, res) {
-    const { email, otp, newPassword } = req.body;
-
-    try {
-        if (!email || !otp || !newPassword) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        // Validate email format
+        if (!authService.validateEmail(email)) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_EMAIL_INVALID);
         }
 
-        // TODO: Validate input
-        // TODO: Check OTP valid
-        // TODO: Check OTP expired
-        // TODO: Hash new password
-        // TODO: Update user password
-        // TODO: Invalidate all tokens
-        
-        res.status(200).json({
-            success: true,
-            message: 'Đặt lại mật khẩu thành công!'
-        });
-
-    } catch (error) {
-        logger.error('Lỗi khi đặt lại mật khẩu:', error);
-        return ErrorResponse.sendServerError(res, error);
-    }
-}
-
-async function changeEmail(req, res) {
-    const { uid, newEmail } = req.body;
-
-    try {
-        if (!uid || !newEmail) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
+        // Check user exists
+        const user = await userRepository.findByEmail(email);
+        if (!user) {
+            return ErrorResponse.send(res, ErrorCodes.USER_NOT_FOUND);
         }
 
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Check new email not exists
-        // TODO: Update email
+        // Check if can resend OTP
+        const canResend = otpService.canResendOTP(email);
+        if (!canResend.can_resend) {
+            return ErrorResponse.send(
+                res,
+                ErrorCodes.AUTH_OTP_RESEND_TOO_SOON,
+                `Please wait ${canResend.seconds_left} seconds before requesting a new OTP.`,
+                { seconds_left: canResend.seconds_left }
+            );
+        }
+
+        // Generate new OTP
+        const otpData = otpService.createOTP(email);
+
+        // TODO: Send OTP email (implement email service later)
+        logger.info(`OTP resent for ${email}: ${otpData.otp}`);
 
         res.status(200).json({
             success: true,
-            message: 'Đổi email thành công!'
+            message: 'OTP sent successfully!',
+            data: {
+                expires_in: otpData.expires_in,
+            }
         });
+
     } catch (error) {
-        logger.error('Lỗi khi đổi email:', error);
+        logger.error('Request OTP error:', error);
+
+        if (error.errorCode) {
+            return ErrorResponse.send(res, error.errorCode, error.message, error.details);
+        }
+
         return ErrorResponse.sendServerError(res, error);
-    }
-}
-
-async function changePassword(req, res) {
-    const { uid, oldPassword, newPassword } = req.body;
-
-    try {
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Verify old password
-        // TODO: Hash new password
-        // TODO: Update user password
-        // TODO: Invalidate all tokens except current
-        
-        res.status(200).json({
-            success: true,
-            message: 'Đổi mật khẩu thành công!'
-        });
-
-    } catch (error) {
-        logger.error('Lỗi khi đổi mật khẩu:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
-    }
-}
-
-async function changeAvatar(req, res) {
-    const { uid, avatarData, formatFile } = req.body;
-
-    try {
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Upload avatar to storage
-        // TODO: Update user avatar_url
-        
-        res.status(200).json({
-            success: true,
-            message: 'Đổi avatar thành công!'
-        });
-
-    } catch (error) {
-        logger.error('Lỗi khi đổi avatar:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
     }
 }
 
@@ -281,30 +280,27 @@ async function refreshToken(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
         }
 
-        // Verify refresh token
-        const decoded = authService.verifyRefreshToken(token);
-
-        // Generate new tokens
+        // Device info from request
         const deviceInfo = {
             device: req.body.device || req.headers['user-agent'],
             userAgent: req.body.user_agent || req.headers['user-agent'],
+            ip: req.ip || req.connection.remoteAddress || 'unknown',
         };
 
-        const newToken = authService.generateToken(decoded.uid, deviceInfo);
-        const newRefreshToken = authService.generateRefreshToken(decoded.uid, deviceInfo);
+        // Use authService.refreshToken (which calls jwtTokenService internally)
+        const result = await authService.refreshToken(token, deviceInfo);
 
         res.status(200).json({
             success: true,
-            message: 'Làm mới token thành công!',
+            message: 'Token refreshed successfully!',
             data: {
-                token: newToken,
-                refresh_token: newRefreshToken,
-                expires_in: 3600,
+                token: result.token,
+                expires_in: result.expiresIn,
             }
         });
 
     } catch (error) {
-        logger.error('Lỗi khi làm mới token:', error);
+        logger.error('Refresh token error:', error);
 
         if (error.errorCode) {
             return ErrorResponse.send(res, error.errorCode, error.message);
@@ -315,21 +311,51 @@ async function refreshToken(req, res) {
 }
 
 async function logout(req, res) {
-    const { uid, token } = req.body;
+    const { token } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Revoke token in database
-        // TODO: Clear session if any
-        
+        // If no token provided, just return success (session-based logout)
+        if (!token) {
+            return res.status(200).json({
+                success: true,
+                message: 'Logged out successfully!'
+            });
+        }
+
+        // Verify and decode token to get JTI
+        let decoded;
+        try {
+            decoded = jwtTokenService.verifyAccessToken(token);
+        } catch (error) {
+            // Even if token is invalid/expired, still return success
+            // User wants to logout anyway
+            logger.warn('Logout with invalid token:', error.message);
+            return res.status(200).json({
+                success: true,
+                message: 'Logged out successfully!'
+            });
+        }
+
+        // Revoke the token
+        if (decoded && decoded.jti) {
+            await jwtTokenService.revokeToken(decoded.jti);
+            logger.info(`User logged out and token revoked: ${decoded.uid}`);
+        }
+
         res.status(200).json({
             success: true,
-            message: 'Đăng xuất thành công!'
+            message: 'Logged out successfully!'
         });
 
     } catch (error) {
-        logger.error('Lỗi khi đăng xuất:', error);
-        return ErrorResponse.sendServerError(res, error);
+        logger.error('Logout error:', error);
+
+        // Even on error, return success for better UX
+        // User wants to logout anyway
+        res.status(200).json({
+            success: true,
+            message: 'Logged out successfully!'
+        });
     }
 }
 
@@ -338,10 +364,6 @@ module.exports = {
     signup,
     confirmOTP,
     requestOTP,
-    resetPassword,
-    changeEmail,
-    changePassword,
-    changeAvatar,
     verifyToken,
     refreshToken,
     logout,
