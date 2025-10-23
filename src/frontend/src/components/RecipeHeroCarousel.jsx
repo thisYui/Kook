@@ -188,7 +188,7 @@ const RecipeHeroCarousel = ({
 
       {/* Indicator Dots */}
       {showIndicators && recipes.length > 1 && (
-        <div className="flex justify-center gap-2 mt-6">
+        <div className="flex justify-center gap-2 p-1">
           {recipes.map((_, index) => (
             <button
               key={index}
