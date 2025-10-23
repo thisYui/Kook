@@ -5,8 +5,7 @@ const { SUPPORTED_LANGUAGES, SUPPORTED_THEMES } = require('../../constants');
 const bcrypt = require('bcryptjs');
 const { BCRYPT_SALT_ROUNDS } = require('../../constants');
 const jwtTokenService = require('../auth/jwtToken.service');
-const fs = require('fs').promises;
-const path = require('path');
+const fileService = require('./file.services');
 
 /**
  * User Service
@@ -101,43 +100,6 @@ class UserService {
     }
 
     /**
-     * Mark notifications as seen
-     * @param {string} uid - User ID
-     * @param {string} notificationID - Notification ID
-     * @returns {Object} - Success response
-     */
-    async markNotificationsSeen(uid, notificationID) {
-        try {
-            // 1. Validate required fields
-            if (!uid || !notificationID) {
-                throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'UID and notification ID are required');
-            }
-
-            // 2. Validate user is active
-            await this.validateUserActive(uid);
-
-            // 3. Mark notification as seen (MongoDB operation)
-            // TODO: Implement MongoDB notification update
-            // const notification = await notificationRepository.markAsSeen(notificationID, uid);
-
-            logger.info(`User ${uid} marked notification ${notificationID} as seen`);
-
-            return {
-                uid,
-                notificationID,
-                seen_at: new Date(),
-            };
-
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            logger.error('Error marking notification as seen:', error);
-            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to mark notification as seen');
-        }
-    }
-
-    /**
      * Delete user account (soft delete)
      * @param {string} uid - User ID
      * @param {string} token - JWT token (for verification)
@@ -190,48 +152,37 @@ class UserService {
 
     /**
      * Reset password using OTP
-     * @param {string} email - User email
-     * @param {string} otp - OTP code
+     * @param {string} uid - User ID
      * @param {string} newPassword - New password
      * @returns {Object} - Success response
      */
-    async resetPassword(email, otp, newPassword) {
+    async resetPassword(uid, newPassword) {
         try {
             // 1. Validate required fields
-            if (!email || !otp || !newPassword) {
-                throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Email, OTP, and new password are required');
+            if (!uid || !newPassword) {
+                throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'UID and new password are required');
             }
 
-            // 2. Find user by email
-            const user = await userRepository.findByEmail(email);
+            // 2. Find user by id
+            const user = await userRepository.findById(uid);
             if (!user) {
                 throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
             }
 
-            // 3. Verify OTP (MongoDB operation)
-            // TODO: Implement OTP verification
-            // const isValidOTP = await otpService.verifyOTP(email, otp);
-            // if (!isValidOTP) {
-            //     throw new AppError(ErrorCodes.AUTH_OTP_INVALID, 'Invalid or expired OTP');
-            // }
-
-            // 4. Validate password strength
+            // 3. Validate password strength
             if (newPassword.length < 8) {
                 throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Password must be at least 8 characters');
             }
 
-            // 5. Hash new password
+            // 4. Hash new password
             const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
             const passwordHash = await bcrypt.hash(newPassword, salt);
 
-            // 6. Update user password
+            // 5. Update user password
             await userRepository.updatePassword(user.id, passwordHash);
 
-            // 7. Revoke all existing tokens
+            // 6. Revoke all existing tokens
             await jwtTokenService.revokeAllUserTokens(user.id);
-
-            // 8. Delete OTP after successful reset
-            // await otpService.deleteOTP(email);
 
             logger.info(`User ${user.id} reset password successfully`);
 
@@ -280,9 +231,6 @@ class UserService {
             // 5. Update email (will set is_verified to false)
             const updatedUser = await userRepository.updateEmail(uid, newEmail);
 
-            // 6. Send verification email to new address
-            // TODO: Implement send OTP to new email
-            // await otpService.sendOTP(newEmail);
 
             logger.info(`User ${uid} changed email to ${newEmail}`);
 
@@ -390,41 +338,18 @@ class UserService {
             // 2. Validate user is active
             await this.validateUserActive(uid);
 
-            // 3. Validate file format
-            const allowedFormats = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-            if (!allowedFormats.includes(formatFile.toLowerCase())) {
-                throw new AppError(
-                    ErrorCodes.VALIDATION_INVALID_VALUE,
-                    `Invalid format. Allowed formats: ${allowedFormats.join(', ')}`
-                );
-            }
+            // 3. Upload avatar using file service
+            const uploadResult = await fileService.uploadAvatar(uid, avatarData, formatFile);
 
-            // 4. Decode base64 and validate size
-            const buffer = Buffer.from(avatarData, 'base64');
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            if (buffer.length > maxSize) {
-                throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Avatar size must be less than 5MB');
-            }
+            // 4. Update user avatar URL in database
+            const updatedUser = await userRepository.updateAvatar(uid, uploadResult.url);
 
-            // 5. Save avatar to uploads folder
-            const uploadsDir = path.join(__dirname, '../../../uploads', uid);
-            await fs.mkdir(uploadsDir, { recursive: true });
-
-            const filename = `avatar_${Date.now()}.${formatFile}`;
-            const filepath = path.join(uploadsDir, filename);
-            await fs.writeFile(filepath, buffer);
-
-            // 6. Generate avatar URL
-            const avatarUrl = `/api/file/${uid}/${filename}`;
-
-            // 7. Update user avatar
-            const updatedUser = await userRepository.updateAvatar(uid, avatarUrl);
-
-            logger.info(`User ${uid} changed avatar to ${avatarUrl}`);
+            logger.info(`User ${uid} changed avatar to ${uploadResult.url}`);
 
             return {
                 uid: updatedUser.id,
                 avatar_url: updatedUser.avatar_url,
+                filename: uploadResult.filename,
             };
 
         } catch (error) {
@@ -462,4 +387,3 @@ class UserService {
 }
 
 module.exports = new UserService();
-

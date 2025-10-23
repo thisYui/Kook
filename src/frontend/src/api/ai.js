@@ -1,11 +1,15 @@
 import apiClient from './apiClient';
+import authService from '../services/authService';
 
 // AI API methods
 export const aiApi = {
     // Generate weekly menu plan - Backend expects: uid, preferences, dietaryRestrictions
-    generateMenuWeek: async (uid, preferences, dietaryRestrictions) => {
+    generateMenuWeek: async (preferences, dietaryRestrictions) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/ai/generate-menu-week', {
             uid,
+            token,
             preferences,
             dietaryRestrictions
         });
@@ -13,9 +17,12 @@ export const aiApi = {
     },
 
     // Image recognition for food/ingredients - Backend expects: uid, imageData, formatFile
-    imageRecognition: async (uid, imageData, formatFile) => {
+    imageRecognition: async (imageData, formatFile) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/ai/image-recognition', {
             uid,
+            token,
             imageData,
             formatFile
         });
@@ -23,9 +30,12 @@ export const aiApi = {
     },
 
     // Get suggested dishes based on ingredients - Backend expects: uid, ingredients, preferences
-    suggestedDishes: async (uid, ingredients, preferences = {}) => {
+    suggestedDishes: async (ingredients, preferences = {}) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/ai/suggested-dishes', {
             uid,
+            token,
             ingredients,
             preferences
         });
@@ -33,9 +43,12 @@ export const aiApi = {
     },
 
     // Analyze nutrition of a recipe/meal - Backend expects: uid, recipeId, ingredients
-    nutritionAnalysis: async (uid, recipeId, ingredients) => {
+    nutritionAnalysis: async (recipeId, ingredients) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/ai/nutrition-analysis', {
             uid,
+            token,
             recipeId,
             ingredients
         });

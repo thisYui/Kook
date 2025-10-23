@@ -1,6 +1,11 @@
 const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require("../utils/errorHandler");
 const userService = require('../services/user/user.services');
+const notificationService = require('../services/user/notification.services');
+const followService = require('../services/user/follow.services');
+const notebookService = require('../services/user/notebook.services');
+const mealPlanService = require('../services/user/mealPlan.services');
+const userAllergyService = require('../services/user/userAllergy.services');
 
 /**
  * Change user language preference
@@ -45,21 +50,65 @@ async function changeTheme(req, res) {
 }
 
 /**
- * allergies (Array of Ingredient): List of ingredients the user is allergic to
-*/
-async function changeAllergyInfo(req, res) {
-    const { uid, allergies } = req.body;
+ * Get user allergies
+ * @route POST /api/users/allergies
+ */
+async function getUserAllergies(req, res) {
+    const { uid } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Update user allergy information
-        // TODO: Save to database
+        const result = await userAllergyService.getUserAllergies(uid);
 
-        res.status(200).json({ message: 'Cập nhật thông tin dị ứng thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi cập nhật thông tin dị ứng:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in getUserAllergies controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/**
+ * Add allergy to user
+ * @route POST /api/users/add-allergy
+ */
+async function addAllergy(req, res) {
+    const { uid, ingredient_key } = req.body;
+
+    try {
+        const result = await userAllergyService.addAllergy(uid, ingredient_key);
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error in addAllergy controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/**
+ * Delete allergy from user
+ * @route DELETE /api/users/delete-allergy
+ */
+async function deleteAllergy(req, res) {
+    const { uid, ingredient_key } = req.body;
+
+    try {
+        const result = await userAllergyService.deleteAllergy(uid, ingredient_key);
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error in deleteAllergy controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
@@ -88,7 +137,7 @@ async function markNotificationsSeen(req, res) {
     const { uid, notificationID } = req.body;
 
     try {
-        const result = await userService.markNotificationsSeen(uid, notificationID);
+        const result = await notificationService.markNotificationsSeen(uid, notificationID);
 
         res.status(200).json({
             success: true,
@@ -127,10 +176,10 @@ async function deleteUserAccount(req, res) {
  * @route POST /api/auth/reset-password
  */
 async function resetPassword(req, res) {
-    const { email, otp, newPassword } = req.body;
+    const { uid, newPassword } = req.body;
 
     try {
-        const result = await userService.resetPassword(email, otp, newPassword);
+        const result = await userService.resetPassword(uid, newPassword);
 
         res.status(200).json({
             success: true,
@@ -165,27 +214,6 @@ async function changeEmail(req, res) {
 }
 
 /**
- * Change user password
- * @route POST /api/auth/change-password
- */
-async function changePassword(req, res) {
-    const { uid, oldPassword, newPassword } = req.body;
-
-    try {
-        const result = await userService.changePassword(uid, oldPassword, newPassword);
-
-        res.status(200).json({
-            success: true,
-            data: result
-        });
-
-    } catch (error) {
-        logger.error('Error in changePassword controller:', error);
-        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
-    }
-}
-
-/**
  * Change user avatar
  * @route POST /api/auth/change-avatar
  */
@@ -207,81 +235,100 @@ async function changeAvatar(req, res) {
     }
 }
 
+/**
+ * Show user notebook (saved posts)
+ * @route POST /api/users/show-user-notebook
+ */
 async function showUserNotebook(req, res) {
-    const { uid } = req.body;
+    const { uid, limit, offset } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Get user's saved posts from notebook
-        // TODO: Return notebook posts
+        const result = await notebookService.showUserNotebook(uid, { limit, offset });
 
-        res.status(200).json({ message: 'Lấy sổ tay thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi lấy sổ tay:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in showUserNotebook controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Overview user meal plans
+ * @route POST /api/users/overview-user-meal-plans
+ */
 async function overviewUserMealPlans(req, res) {
-    const { uid } = req.body;
+    const { uid, limit, offset, activeOnly } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Get user's meal plans from MongoDB
-        // TODO: Return meal plans overview
+        const result = await mealPlanService.overviewUserMealPlans(uid, { limit, offset, activeOnly });
 
-        res.status(200).json({ message: 'Lấy danh sách kế hoạch bữa ăn thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi lấy danh sách kế hoạch bữa ăn:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in overviewUserMealPlans controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Show user meal plan details
+ * @route POST /api/users/show-user-meal-plans
+ */
 async function showUserMealPlans(req, res) {
     const { uid, mealPlanID } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Get user's meal plans from MongoDB
-        // TODO: Filter by date range if provided
-        // TODO: Return meal plans
+        const result = await mealPlanService.showUserMealPlans(uid, mealPlanID);
 
-        res.status(200).json({ message: 'Lấy kế hoạch bữa ăn thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi lấy kế hoạch bữa ăn:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in showUserMealPlans controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Get follow list (followers and following)
+ * @route POST /api/users/get-follow-list
+ */
 async function getFollowList(req, res) {
-    const { uid } = req.body;
+    const { uid, type, limit, offset } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Get user's follow list from PostgreSQL
-        // TODO: Return follow list
+        const result = await followService.getFollowList(uid, { type, limit, offset });
 
-        res.status(200).json({ message: 'Lấy danh sách theo dõi thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi lấy danh sách theo dõi:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in getFollowList controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
 module.exports = {
     changeLanguage,
     changeTheme,
-    changeAllergyInfo,
+    getUserAllergies,
+    addAllergy,
     getUserProfile,
     markNotificationsSeen,
     deleteUserAccount,
     resetPassword,
     changeEmail,
-    changePassword,
     changeAvatar,
     showUserNotebook,
     overviewUserMealPlans,

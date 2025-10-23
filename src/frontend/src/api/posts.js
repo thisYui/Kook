@@ -1,11 +1,14 @@
 import apiClient from './apiClient';
+import authService from '../services/authService';
 
 // Posts API methods
 export const postsApi = {
     // Create a new post - Backend expects: uid, title, description, images, tags, countryCode, recipeData
     newPost: async (postData) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const {
-            uid,
+            token,
             title,
             description,
             images,
@@ -50,9 +53,12 @@ export const postsApi = {
     },
 
     // Rate a post - Backend expects: uid, postID, rating
-    ratePost: async (uid, postID, rating) => {
+    ratePost: async (postID, rating) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/rating-post', {
             uid,
+            token,
             postID,
             rating
         });
@@ -60,9 +66,12 @@ export const postsApi = {
     },
 
     // Comment on a post - Backend expects: uid, postID, content
-    commentPost: async (uid, postID, content) => {
+    commentPost: async (postID, content) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/new-comment-post', {
             uid,
+            token,
             postID,
             content
         });
@@ -70,10 +79,13 @@ export const postsApi = {
     },
 
     // Delete a comment - Backend expects: uid, commentId
-    deleteCommentPost: async (uid, commentId) => {
+    deleteCommentPost: async (commentId) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/delete-comment-post', {
             data: {
                 uid,
+            token,
                 commentId
             }
         });
@@ -81,50 +93,85 @@ export const postsApi = {
     },
 
     // Delete a post - Backend expects: uid, postID
-    deletePost: async (uid, postID) => {
+    deletePost: async (postID) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/delete-post', {
             data: {
                 uid,
+            token,
                 postID
             }
         });
         return response.data;
     },
 
-    // Repost
-    repost: async (uid, postID) => {
+    // Repost - Backend expects: uid, postID
+    repost: async (postID) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/repost', {
             uid,
+            token,
             postID
         });
         return response.data;
     },
 
-    // Add post to notebook
-    addPostToNotebook: async (uid, postID) => {
-        const response = await apiClient.post('/api/posts/add-notebook', {
-            uid,
-            postID
-        });
-        return response.data;
-    },
-
-    // Add note to repost
-    addNoteToRepost: async (uid, repostId, note) => {
-        const response = await apiClient.post('/api/posts/add-note', {
-            uid,
-            repostId,
-            note
-        });
-        return response.data;
-    },
-
-    // Delete note from repost
-    deleteNoteToRepost: async (uid, repostId) => {
-        const response = await apiClient.delete('/api/posts/delete-note', {
+    // Cancel repost - Backend expects: uid, postID
+    cancelRepost: async (postID) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
+        const response = await apiClient.delete('/api/posts/cancel-repost', {
             data: {
                 uid,
-                repostId
+                token,
+                postID
+            }
+        });
+        return response.data;
+    },
+
+    // Save post to notebook - Backend expects: uid, postID
+    saveToNotebook: async (postID) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
+        const response = await apiClient.post('/api/posts/save-to-notebook', {
+            uid,
+            token,
+            postID
+        });
+        return response.data;
+    },
+
+    // Remove post from notebook - Backend expects: uid, postID
+    removeFromNotebook: async (postID) => {
+        const uid = authService.getUserId();
+        const token = authService.getToken();
+        const response = await apiClient.delete('/api/posts/remove-from-notebook', {
+            data: {
+                uid,
+            token,
+                postID
+            }
+        });
+        return response.data;
+    },
+
+    // Get post details - Backend expects: postID (no auth required for public posts)
+    getPostDetails: async (postID) => {
+        const response = await apiClient.get(`/api/posts/${postID}`);
+        return response.data;
+    },
+
+    // Get user's posts - Backend expects: uid (can be different from logged user)
+    getUserPosts: async (targetUid, page = 1, limit = 20) => {
+        const response = await apiClient.get('/api/posts/user', {
+            params: {
+                uid: targetUid,
+                page,
+                token,
+                limit
             }
         });
         return response.data;
