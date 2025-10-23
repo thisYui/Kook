@@ -21,6 +21,7 @@ import SearchPage from './pages/SearchPage';
 import AIPage from './pages/AIPage';
 import IndexPage from './pages/IndexPage';
 import CookPage from './pages/CookPage';
+import ShowCasePage from './pages/ShowCasePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // Auth components
@@ -62,6 +63,7 @@ function App() {
           <Route path="/repost/:id" element={<RepostPage />} />
           <Route path="/notebook" element={<NotebookPage />} />
           <Route path="/question" element={<QuestionPage />} />
+          <Route path="/showcase" element={<ShowCasePage />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/ai" element={<AIPage />} />
           <Route path="/" element={<IndexPage />} />

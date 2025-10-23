@@ -43,8 +43,8 @@ const NavigationBar = () => {
             <a href="#blog" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
               Blog
             </a>
-            <a href="#contact" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              Contact
+            <a href="/showcase" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
+              Show Case
             </a>
             <a href="#about" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
               About us
@@ -155,11 +155,11 @@ const NavigationBar = () => {
                 Blog
               </a>
               <a
-                href="#contact"
+                href="/showcase"
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Contact
+                Show Case
               </a>
               <a
                 href="#about"

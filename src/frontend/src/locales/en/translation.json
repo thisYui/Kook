@@ -1,4 +1,7 @@
 {
+    "carousel": {
+        "viewRecipes": "View Recipes"
+    },
     "undeveloped": {
         "title": "Under Development",
         "description": "This feature is currently under development.",

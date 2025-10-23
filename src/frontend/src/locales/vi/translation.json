@@ -1,4 +1,7 @@
 {
+    "carousel": {
+        "viewRecipes": "Xem Công Thức"
+    },
     "login": {
         "title": "Đăng nhập",
         "email": "Email",
