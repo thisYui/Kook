@@ -4,7 +4,7 @@
  * Supports both persistent (localStorage) and session-only (sessionStorage) authentication
  */
 
-import { STORAGE_KEYS } from '../constants';
+import { STORAGE_KEYS } from '../constants/index.js';
 
 class AuthService {
     constructor() {
@@ -189,23 +189,27 @@ class AuthService {
 
         try {
             // Import apiClient here to avoid circular dependency
-            const { authApi } = await import('./auth');
+            const { authApi } = await import('../api/auth.js');
 
-            const response = await authApi.renewToken(refreshToken);
+            // Call refreshToken (not renewToken)
+            const response = await authApi.refreshToken(refreshToken);
 
-            if (response.token) {
+            // Backend returns: { success: true, data: { token, expires_in } }
+            const tokenData = response.data || response;
+
+            if (tokenData.token) {
                 this.setTokens(
-                    response.token,
-                    response.refresh_token || refreshToken,
-                    response.expires_in || 3600
+                    tokenData.token,
+                    refreshToken, // Keep same refresh token
+                    tokenData.expires_in || 3600
                 );
 
                 // Notify all subscribers
-                this.refreshSubscribers.forEach(callback => callback(response.token));
+                this.refreshSubscribers.forEach(callback => callback(tokenData.token));
                 this.refreshSubscribers = [];
 
                 this.isRefreshing = false;
-                return response.token;
+                return tokenData.token;
             }
         } catch (error) {
             console.error('Failed to refresh token:', error);
@@ -256,8 +260,7 @@ class AuthService {
             refresh_token,
             expires_in,
             user,
-            remember_me,
-            ...rest
+            remember_me
         } = loginResponse;
 
         // Only set tokens if they exist (rememberMe = true)
@@ -281,7 +284,13 @@ class AuthService {
             const updatedUser = { ...currentUser, ...updates };
             const storage = this.getStorage();
             storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(updatedUser));
+            return updatedUser;
         }
+        return null;
+    }
+
+    getCurrentUserId() {
+        return this.getUserId();
     }
 }
 

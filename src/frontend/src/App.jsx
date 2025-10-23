@@ -18,7 +18,6 @@ import RepostPage from './pages/RepostPage';
 import NotebookPage from './pages/NotebookPage';
 import QuestionPage from './pages/QuestionPage';
 import SearchPage from './pages/SearchPage';
-import AnalyticsPage from './pages/AnalyticsPage';
 import AIPage from './pages/AIPage';
 import IndexPage from './pages/IndexPage';
 import CookPage from './pages/CookPage';
@@ -26,7 +25,7 @@ import NotFoundPage from './pages/NotFoundPage';
 
 // Auth components
 import { ProtectedRoute, PublicOnlyRoute } from './components/ProtectedRoute';
-import authService from './api/authService';
+import authService from './services/authService.js';
 
 function App() {
   // Initialize auth service when app loads
@@ -64,7 +63,6 @@ function App() {
           <Route path="/notebook" element={<NotebookPage />} />
           <Route path="/question" element={<QuestionPage />} />
           <Route path="/search" element={<SearchPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/ai" element={<AIPage />} />
           <Route path="/" element={<IndexPage />} />
         </Route>

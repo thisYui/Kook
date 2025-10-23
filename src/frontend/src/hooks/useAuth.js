@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import authService from '../api/authService';
+import authService from '../services/authService.js';
 
 /**
  * Custom hook for authentication
@@ -44,15 +44,25 @@ export const useAuth = () => {
     };
 
     const logout = async () => {
-        await authService.handleLogout();
+        try {
+            // Call backend logout API
+            const { authApi } = await import('../api');
+            await authApi.logout();
+        } catch (error) {
+            console.error('Logout API failed:', error);
+            // Continue with local logout even if API fails
+        }
+
+        // Clear local auth data using correct method
+        authService.logout();
         setIsLoggedIn(false);
         setUser(null);
         navigate('/login');
     };
 
     const updateUser = (updates) => {
-        const newUserData = authService.updateUserData(updates);
-        setUser(newUserData);
+        authService.updateUserData(updates);
+        setUser(authService.getUserData());
     };
 
     return {
@@ -89,4 +99,3 @@ export const useRequireAuth = () => {
 
     return { loading };
 };
-

@@ -1,42 +1,46 @@
 import apiClient, { setAuthToken } from './apiClient';
-import authService from './authService';
+import authService from '../services/authService.js';
 
 // Auth API methods
 export const authApi = {
     // Login user
     login: async (email, password, rememberMe = false) => {
-        const body = {
+        const response = await apiClient.post('/api/auth/login', {
             email,
             password,
             rememberMe: rememberMe
-        };
+        });
 
-        const response = await apiClient.post('/api/auth/login', body);
+        // Backend returns: { success: true, uid, user, remember_me, token?, refresh_token?, expires_in? }
+        const loginData = response.data;
 
-        // Only handle token if rememberMe is true and token exists
-        if (rememberMe && response.data.token) {
-            // Use authService to handle login with token
-            authService.handleLogin(response.data);
-            setAuthToken(response.data.token);
+        // Handle login based on rememberMe
+        if (rememberMe && loginData.token) {
+            // Token-based login (rememberMe = true)
+            authService.handleLogin({
+                token: loginData.token,
+                refresh_token: loginData.refresh_token,
+                expires_in: loginData.expires_in,
+                user: loginData.user,
+                remember_me: rememberMe
+            });
+            setAuthToken(loginData.token);
         } else {
-            // Session-only login without token
-            // Store user info in sessionStorage instead of localStorage
-            if (response.data.user) {
-                sessionStorage.setItem('user', JSON.stringify(response.data.user));
+            // Session-only login (rememberMe = false)
+            if (loginData.user) {
+                authService.setUserData(loginData.user, false); // Use sessionStorage
             }
             // Clear any existing tokens
-            authService.logout();
+            setAuthToken(null);
         }
 
-        if (response.data.uid) {
-            if (rememberMe) {
-                localStorage.setItem('uid', response.data.uid);
-            } else {
-                sessionStorage.setItem('uid', response.data.uid);
-            }
+        // Store UID
+        if (loginData.uid) {
+            const storage = rememberMe ? localStorage : sessionStorage;
+            storage.setItem('uid', loginData.uid);
         }
 
-        return response.data;
+        return loginData;
     },
 
     // Register new user - Backend expects: email, password, fullName
@@ -46,6 +50,7 @@ export const authApi = {
             email,
             password,
         });
+        // Backend returns: { success: true, message, data: { email, expires_in } }
         return response.data;
     },
 
@@ -56,16 +61,22 @@ export const authApi = {
             otp
         });
 
-        // Backend returns nested data: response.data.data.token
+        // Backend returns: { success: true, message, data: { uid, token, refresh_token, expires_in, user } }
         if (response.data.data && response.data.data.token) {
+            const confirmData = response.data.data;
             authService.handleLogin({
-                token: response.data.data.token,
-                refresh_token: response.data.data.refresh_token,
-                expires_in: response.data.data.expires_in,
-                uid: response.data.data.uid,
-                user: response.data.data.user,
+                token: confirmData.token,
+                refresh_token: confirmData.refresh_token,
+                expires_in: confirmData.expires_in,
+                user: confirmData.user,
+                remember_me: true // Auto login after confirm OTP
             });
-            setAuthToken(response.data.data.token);
+            setAuthToken(confirmData.token);
+
+            // Store UID
+            if (confirmData.uid) {
+                localStorage.setItem('uid', confirmData.uid);
+            }
         }
 
         return response.data;
@@ -76,35 +87,34 @@ export const authApi = {
         const response = await apiClient.post('/api/auth/send-otp', {
             email
         });
+        // Backend returns: { success: true, message, data: { expires_in } }
         return response.data;
     },
 
     // Verify token
     verifyToken: async (token) => {
         const response = await apiClient.post('/api/auth/verify-token', {
-            token,
-            device: navigator.platform,
-            user_agent: navigator.userAgent,
+            token
         });
+        // Backend returns: { success: true, message, data: decoded }
         return response.data;
     },
 
     // Refresh token
     refreshToken: async (oldToken) => {
         const response = await apiClient.post('/api/auth/refresh-token', {
-            token: oldToken,
-            device: navigator.platform,
-            user_agent: navigator.userAgent,
+            token: oldToken
         });
 
-        // Backend returns: response.data.data.token (nested)
+        // Backend returns: { success: true, message, data: { token, expires_in } }
         if (response.data.data && response.data.data.token) {
+            const tokenData = response.data.data;
             authService.setTokens(
-                response.data.data.token,
+                tokenData.token,
                 oldToken, // Keep old refresh token
-                response.data.data.expires_in || 3600
+                tokenData.expires_in || 3600
             );
-            setAuthToken(response.data.data.token);
+            setAuthToken(tokenData.token);
         }
 
         return response.data;
@@ -114,22 +124,28 @@ export const authApi = {
     logout: async () => {
         const token = authService.getToken();
 
+        // If no token, just clear local auth and return success
         if (!token) {
-            return { success: true };
+            authService.logout();
+            setAuthToken(null);
+            return { success: true, message: 'Logged out successfully!' };
         }
 
         try {
+            // Backend expects: { token: "jwt_token" }
+            // Backend will decode token to get JTI and revoke it
             const response = await apiClient.post('/api/auth/logout', {
-                token: token,  // ✅ Changed from 'jti' to 'token'
+                token: token,
             });
 
-            authService.clearAuth();
+            // Clear local auth after successful backend logout
+            authService.logout();
             setAuthToken(null);
 
             return response.data;
         } catch (error) {
             // Clear auth even if logout request fails
-            authService.clearAuth();
+            authService.logout();
             setAuthToken(null);
             throw error;
         }

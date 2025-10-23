@@ -16,23 +16,59 @@ http://localhost:3000/api
 ```json
 {
   "email": "string",
-  "password": "string"
+  "password": "string",
+  "rememberMe": "boolean (optional, default: false)"
 }
 ```
 
-**Response:**
+**Response (rememberMe = true):**
 ```json
 {
-  "message": "Đăng nhập thành công!",
-  "token": "string",
-  "refreshToken": "string",
+  "success": true,
+  "uid": "string",
   "user": {
-    "uid": "string",
+    "id": "string",
+    "name": "string",
     "email": "string",
-    "fullName": "string"
-  }
+    "avatar_url": "string",
+    "language": "string",
+    "theme": "string",
+    "bio": "string",
+    "role": "string",
+    "is_verified": "boolean",
+    "is_disabled": "boolean"
+  },
+  "remember_me": true,
+  "token": "string",
+  "refresh_token": "string",
+  "expires_in": "number (seconds)"
 }
 ```
+
+**Response (rememberMe = false):**
+```json
+{
+  "success": true,
+  "uid": "string",
+  "user": {
+    "id": "string",
+    "name": "string",
+    "email": "string",
+    "avatar_url": "string",
+    "language": "string",
+    "theme": "string",
+    "bio": "string",
+    "role": "string",
+    "is_verified": "boolean",
+    "is_disabled": "boolean"
+  },
+  "remember_me": false
+}
+```
+
+**Note:** 
+- Khi `rememberMe = true`, backend sẽ trả về token để lưu vào localStorage
+- Khi `rememberMe = false`, backend KHÔNG trả về token, chỉ session-based authentication
 
 ---
 
@@ -51,10 +87,21 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Chờ mã xác nhận!",
-  "email": "string"
+  "success": true,
+  "message": "Registration successful! Please check your email for OTP.",
+  "data": {
+    "email": "string",
+    "expires_in": "number (seconds)"
+  }
 }
 ```
+
+**Password Requirements:**
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- Special characters recommended (but not required)
 
 ---
 
@@ -72,11 +119,24 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Xác nhận thành công!",
-  "token": "string",
-  "refreshToken": "string"
+  "success": true,
+  "message": "Email verified successfully!",
+  "data": {
+    "uid": "string",
+    "token": "string",
+    "refresh_token": "string",
+    "expires_in": "number (seconds)",
+    "user": {
+      "id": "string",
+      "name": "string",
+      "email": "string",
+      "avatar_url": "string"
+    }
+  }
 }
 ```
+
+**Note:** Sau khi xác nhận OTP thành công, user sẽ được tự động đăng nhập và nhận token
 
 ---
 
@@ -93,154 +153,26 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Đã gửi mã OTP!"
+  "success": true,
+  "message": "OTP sent successfully!",
+  "data": {
+    "expires_in": "number (seconds)"
+  }
 }
 ```
+
+**Rate Limiting:**
+- Chỉ có thể gửi lại OTP sau mỗi 60 giây
+- Nếu request quá nhanh, sẽ nhận error code `AUTH_OTP_RESEND_TOO_SOON`
 
 ---
 
-### 1.5. Đặt lại mật khẩu
-**Endpoint:** `POST /api/auth/reset-password`
-
-**Request Body:**
-```json
-{
-  "email": "string",
-  "otp": "string",
-  "newPassword": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Đặt lại mật khẩu thành công!"
-}
-```
-
----
-
-### 1.6. Đổi email
-**Endpoint:** `POST /api/auth/change-email`
-
-**Request Body:**
-```json
-{
-  "uid": "string",
-  "newEmail": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Chờ xác nhận email mới!"
-}
-```
-
----
-
-### 1.7. Đổi mật khẩu
-**Endpoint:** `POST /api/auth/change-password`
-
-**Request Body:**
-```json
-{
-  "uid": "string",
-  "oldPassword": "string",
-  "newPassword": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Đổi mật khẩu thành công!"
-}
-```
-
----
-
-### 1.8. Đổi avatar
-**Endpoint:** `POST /api/auth/change-avatar`
-
-**Request Body:**
-```json
-{
-  "uid": "string",
-  "avatarData": "base64_string",
-  "formatFile": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Đổi avatar thành công!",
-  "avatarUrl": "string"
-}
-```
-
----
-
-### 1.9. Xác thực token
+### 1.5. Xác thực token
 **Endpoint:** `POST /api/auth/verify-token`
 
 **Request Body:**
 ```json
 {
-  "uid": "string",
-  "token": "string",
-  "ipAddress": "string",
-  "userAgent": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Token hợp lệ!",
-  "valid": true,
-  "user": {
-    "uid": "string",
-    "email": "string"
-  }
-}
-```
-
----
-
-### 1.10. Làm mới token
-**Endpoint:** `POST /api/auth/renew-token`
-
-**Request Body:**
-```json
-{
-  "uid": "string",
-  "refreshToken": "string",
-  "ipAddress": "string",
-  "userAgent": "string"
-}
-```
-
-**Response:**
-```json
-{
-  "message": "Làm mới token thành công!",
-  "token": "string",
-  "refreshToken": "string"
-}
-```
-
----
-
-### 1.11. Đăng xuất
-**Endpoint:** `POST /api/auth/logout`
-
-**Request Body:**
-```json
-{
-  "uid": "string",
   "token": "string"
 }
 ```
@@ -248,9 +180,91 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Đăng xuất thành công!"
+  "success": true,
+  "message": "Token hợp lệ!",
+  "data": {
+    "uid": "string",
+    "jti": "string",
+    "iat": "number",
+    "exp": "number"
+  }
 }
 ```
+
+---
+
+### 1.6. Làm mới token
+**Endpoint:** `POST /api/auth/refresh-token`
+
+**Request Body:**
+```json
+{
+  "token": "string (refresh token)",
+  "device": "string (optional)",
+  "user_agent": "string (optional)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Token refreshed successfully!",
+  "data": {
+    "token": "string (new access token)",
+    "expires_in": "number (seconds)"
+  }
+}
+```
+
+**Note:** 
+- Refresh token được sử dụng để lấy access token mới khi access token hết hạn
+- Không trả về refresh token mới, vẫn sử dụng refresh token cũ
+
+---
+
+### 1.7. Đăng xuất
+**Endpoint:** `POST /api/auth/logout`
+
+**Request Body:**
+```json
+{
+  "token": "string (optional)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Logged out successfully!"
+}
+```
+
+**Note:** 
+- Nếu có token, backend sẽ revoke token đó (thêm vào blacklist)
+- Nếu không có token (session-based), vẫn trả về success
+- Luôn trả về success code 200 để UX tốt hơn, ngay cả khi token invalid
+
+---
+
+### ~~1.5. Đặt lại mật khẩu~~ (Chưa hoàn thành)
+**Status:** Not implemented yet
+
+---
+
+### ~~1.6. Đổi email~~ (Chưa hoàn thành)
+**Status:** Not implemented yet
+
+---
+
+### ~~1.7. Đổi mật khẩu~~ (Chưa hoàn thành)
+**Status:** Not implemented yet
+
+---
+
+### ~~1.8. Đổi avatar~~ (Chưa hoàn thành)
+**Status:** Not implemented yet
 
 ---
 
@@ -936,4 +950,3 @@ Authorization: Bearer <token>
 - Rating luôn là số từ 1 đến 5
 - Language hỗ trợ: `vi` (Tiếng Việt), `en` (English)
 - Theme hỗ trợ: `light`, `dark`, `system`
-

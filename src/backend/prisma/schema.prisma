@@ -164,26 +164,28 @@ model Follow {
 }
 
 model Post {
-  id                String    @id @default(uuid()) @map("post_id") @db.Uuid
-  author_id         String    @db.Uuid
-  title             String    @db.VarChar(500)
-  short_description String?   @db.Text
-  rating_avg        Decimal?  @default(0) @db.Decimal(3, 2)
-  rating_count      Int       @default(0)
-  image_url         String?   @db.Text
-  view_count        Int       @default(0)
-  comment_count     Int       @default(0)
-  repost_count      Int       @default(0)
-  notebook_count    Int       @default(0)
-  is_published      Boolean   @default(true)
-  is_disabled       Boolean   @default(false)
-  is_deleted        Boolean   @default(false)
-  created_at        DateTime  @default(now()) @db.Timestamp
-  updated_at        DateTime  @updatedAt @db.Timestamp
-  deleted_at        DateTime?
+  id                  String    @id @default(uuid()) @map("post_id") @db.Uuid
+  author_id           String    @db.Uuid
+  title               String    @db.VarChar(500)
+  short_description   String?   @db.Text
+  rating_avg          Decimal?  @default(0) @db.Decimal(3, 2)
+  rating_count        Int       @default(0)
+  image_url           String?   @db.Text
+  view_count          Int       @default(0)
+  comment_count       Int       @default(0)
+  repost_count        Int       @default(0)
+  notebook_count      Int       @default(0)
+  reply_question_id   String?   @db.Uuid
+  is_published        Boolean   @default(true)
+  is_disabled         Boolean   @default(false)
+  is_deleted          Boolean   @default(false)
+  created_at          DateTime  @default(now()) @db.Timestamp
+  updated_at          DateTime  @updatedAt @db.Timestamp
+  deleted_at          DateTime?
 
   // Relations
   author      User         @relation(fields: [author_id], references: [id], onDelete: Cascade)
+  question    Question?    @relation("QuestionReplies", fields: [reply_question_id], references: [id])
   recipe      Recipe?
   ingredients Ingredient[]
   ratings     Rating[]
@@ -201,6 +203,19 @@ model Post {
   @@index([view_count])
   @@index([title])
   @@map("posts")
+}
+
+model Question {
+  id          String   @id @default(uuid()) @map("question_id") @db.Uuid
+  image_url   String?  @db.Text
+  question    String   @db.Text
+  created_at  DateTime @default(now()) @db.Timestamp
+  updated_at  DateTime @updatedAt @db.Timestamp
+
+  // Relations
+  posts Post[]  @relation("QuestionReplies")
+
+  @@map("questions")
 }
 
 enum Difficulty {

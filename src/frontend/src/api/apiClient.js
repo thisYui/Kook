@@ -1,8 +1,8 @@
 import axios from 'axios';
-import authService from './authService';
+import authService from '../services/authService.js';
 
 // Base URL for the backend API - adjust based on environment
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:3000`;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || `${window.location.protocol}//${window.location.hostname}:5000`;
 
 // Create an Axios instance with default configurations
 const apiClient = axios.create({

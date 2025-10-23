@@ -17,7 +17,6 @@ export default function SignupPage() {
     confirmPassword: "",
   });
   const [formError, setFormError] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,7 +36,7 @@ export default function SignupPage() {
       return;
     }
 
-    navigate('/confirm_otp');
+    navigate('/confirm-otp');
   };
 
   return (

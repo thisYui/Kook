@@ -11,7 +11,7 @@
  */
 
 import apiClient from './apiClient';
-import authService from './authService';
+import authService from '../services/authService.js';
 import { authApi } from './auth';
 import { postsApi } from './posts';
 import { usersApi } from './users';
