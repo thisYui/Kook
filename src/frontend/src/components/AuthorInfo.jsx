@@ -85,7 +85,7 @@ function getInitials(name) {
 /**
  * AuthorAvatar - Avatar image with fallback to initials
  */
-function AuthorAvatar({ src, name, size, onClick }) {
+export function AuthorAvatar({ src, name, size, onClick }) {
   const [imageError, setImageError] = React.useState(false);
   const sizeClass = SIZE_CLASSES[size].avatar;
   

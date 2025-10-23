@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import Button from './Button';
+import { AuthorAvatar } from './AuthorInfo';
 import { Menu, X } from 'lucide-react';
 
 const NavigationBar = () => {
@@ -67,10 +68,10 @@ const NavigationBar = () => {
                     }
                   }}
                 >
-                  <img
-                    src={user.avatar || '/default-avatar.png'}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  <AuthorAvatar
+                    src={user.avatar}
+                    name={user.name}
+                    size="md"
                   />
                   <span className="hidden lg:block font-medium text-gray-900">{user.name}</span>
                 </button>
