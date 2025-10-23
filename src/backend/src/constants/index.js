@@ -22,6 +22,10 @@ module.exports = {
   MAX_LOGIN_ATTEMPTS: 5,
   LOGIN_LOCK_TIME: 900, // 15 minutes in seconds
 
+  // User Preferences
+  SUPPORTED_LANGUAGES: ['vi', 'en'],
+  SUPPORTED_THEMES: ['light', 'dark', 'system'],
+
   // HTTP Status Codes
   HTTP_STATUS: {
     OK: 200,

@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: '../.env' });
 const express = require('express');
 const cors = require('cors');
 const { PORT, NODE_ENV } = require('./config/env');
@@ -7,7 +7,7 @@ const prisma = require('./config/prisma');
 const mongoose = require('mongoose');
 const { logServerAddresses } = require('./utils/network');
 const logger = require('./config/logger');
-const { requestLogger, errorLogger, notFoundLogger } = require('./middleware/logger');
+const { requestLogger, notFoundLogger } = require('./middleware/logger');
 const errorHandlerMiddleware = require('./middleware/errorHandler');
 
 // Routes

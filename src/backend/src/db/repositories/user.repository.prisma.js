@@ -174,6 +174,90 @@ class UserRepository {
             }
         });
     }
+
+    /**
+     * Update user language preference
+     */
+    async updateLanguage(id, language) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                language: language,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                language: true,
+            }
+        });
+    }
+
+    /**
+     * Update user theme preference
+     */
+    async updateTheme(id, theme) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                theme: theme,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                theme: true,
+            }
+        });
+    }
+
+    /**
+     * Update user password
+     */
+    async updatePassword(id, passwordHash) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                password_hash: passwordHash,
+            }
+        });
+    }
+
+    /**
+     * Update user email
+     */
+    async updateEmail(id, email) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                email: email,
+                is_verified: false, // Need to re-verify new email
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+            }
+        });
+    }
+
+    /**
+     * Update user avatar
+     */
+    async updateAvatar(id, avatarUrl) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                avatar_url: avatarUrl,
+            },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                avatar_url: true,
+            }
+        });
+    }
 }
 
 module.exports = new UserRepository();

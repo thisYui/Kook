@@ -91,13 +91,20 @@ class JwtTokenService {
             // Generate token
             const tokenData = this.generateAccessToken(userId, deviceInfo);
 
+            // Prepare safe device info
+            const deviceInfoSafe = {
+                device_name: (deviceInfo.device || '').slice(0, 99) || null,
+                user_agent: (deviceInfo.userAgent || '').slice(0, 255) || null,
+                ip_address: deviceInfo.ip || null,
+            };
+
             // Save to database
             await jwtTokenRepository.saveToken(
                 userId,
                 tokenData.jti,
                 'ACCESS',
                 tokenData.exp,
-                deviceInfo
+                deviceInfoSafe,
             );
 
             logger.info(`Access token created for user: ${userId}`);

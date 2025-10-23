@@ -5,6 +5,7 @@ import authService from '../services/authService.js';
 export const authApi = {
     // Login user
     login: async (email, password, rememberMe = false) => {
+        console.log(rememberMe)
         const response = await apiClient.post('/api/auth/login', {
             email,
             password,

@@ -1,35 +1,46 @@
 const logger = require('../utils/logger');
-const {ErrorResponse, ErrorCodes} = require("../utils/errorHandler");
+const { ErrorResponse, ErrorCodes } = require("../utils/errorHandler");
+const userService = require('../services/user/user.services');
 
+/**
+ * Change user language preference
+ * @route POST /api/user/change-lang
+ */
 async function changeLanguage(req, res) {
     const { uid, language } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Check language is supported (vi, en)
-        // TODO: Update user language preference
+        const result = await userService.changeLanguage(uid, language);
 
-        res.status(200).json({ message: 'Đổi ngôn ngữ thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi đổi ngôn ngữ:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in changeLanguage controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Change user theme preference
+ * @route POST /api/user/change-theme
+ */
 async function changeTheme(req, res) {
     const { uid, theme } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Check theme is valid (light, dark, system)
-        // TODO: Update user theme preference
+        const result = await userService.changeTheme(uid, theme);
 
-        res.status(200).json({ message: 'Đổi giao diện thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi đổi giao diện:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in changeTheme controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
@@ -69,130 +80,130 @@ async function getUserProfile(req, res) {
     }
 }
 
+/**
+ * Mark notifications as seen
+ * @route POST /api/user/seen-notifications
+ */
 async function markNotificationsSeen(req, res) {
     const { uid, notificationID } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Update notifications as seen
-        // TODO: Update seen_at timestamp
+        const result = await userService.markNotificationsSeen(uid, notificationID);
 
-        res.status(200).json({ message: 'Đánh dấu thông báo đã xem thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi đánh dấu thông báo:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in markNotificationsSeen controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Delete user account (soft delete)
+ * @route POST /api/user/delete-account
+ */
 async function deleteUserAccount(req, res) {
     const { uid, token } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Verify password
-        // TODO: Check confirm text matches
-        // TODO: Soft delete user account
-        // TODO: Revoke all tokens
-        // TODO: Schedule data deletion after grace period
+        const result = await userService.deleteUserAccount(uid, token);
 
-        res.status(200).json({ message: 'Xóa tài khoản thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi xóa tài khoản:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in deleteUserAccount controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
-
+/**
+ * Reset password using OTP
+ * @route POST /api/auth/reset-password
+ */
 async function resetPassword(req, res) {
     const { email, otp, newPassword } = req.body;
 
     try {
-        if (!email || !otp || !newPassword) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
-        }
-
-        // TODO: Validate input
-        // TODO: Check OTP valid
-        // TODO: Check OTP expired
-        // TODO: Hash new password
-        // TODO: Update user password
-        // TODO: Invalidate all tokens
+        const result = await userService.resetPassword(email, otp, newPassword);
 
         res.status(200).json({
             success: true,
-            message: 'Đặt lại mật khẩu thành công!'
+            data: result
         });
 
     } catch (error) {
-        logger.error('Lỗi khi đặt lại mật khẩu:', error);
-        return ErrorResponse.sendServerError(res, error);
+        logger.error('Error in resetPassword controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Change user email
+ * @route POST /api/auth/change-email
+ */
 async function changeEmail(req, res) {
     const { uid, newEmail } = req.body;
 
     try {
-        if (!uid || !newEmail) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_REQUIRED_FIELD);
-        }
-
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Check new email not exists
-        // TODO: Update email
+        const result = await userService.changeEmail(uid, newEmail);
 
         res.status(200).json({
             success: true,
-            message: 'Đổi email thành công!'
+            data: result
         });
+
     } catch (error) {
-        logger.error('Lỗi khi đổi email:', error);
-        return ErrorResponse.sendServerError(res, error);
+        logger.error('Error in changeEmail controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Change user password
+ * @route POST /api/auth/change-password
+ */
 async function changePassword(req, res) {
     const { uid, oldPassword, newPassword } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Verify old password
-        // TODO: Hash new password
-        // TODO: Update user password
-        // TODO: Invalidate all tokens except current
+        const result = await userService.changePassword(uid, oldPassword, newPassword);
 
         res.status(200).json({
             success: true,
-            message: 'Đổi mật khẩu thành công!'
+            data: result
         });
 
     } catch (error) {
-        logger.error('Lỗi khi đổi mật khẩu:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in changePassword controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
+/**
+ * Change user avatar
+ * @route POST /api/auth/change-avatar
+ */
 async function changeAvatar(req, res) {
     const { uid, avatarData, formatFile } = req.body;
 
     try {
-        // TODO: Validate input
-        // TODO: Check user exists
-        // TODO: Upload avatar to storage
-        // TODO: Update user avatar_url
+        const result = await userService.changeAvatar(uid, avatarData, formatFile);
 
         res.status(200).json({
             success: true,
-            message: 'Đổi avatar thành công!'
+            message: 'Đổi avatar thành công!',
+            data: result
         });
 
     } catch (error) {
-        logger.error('Lỗi khi đổi avatar:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in changeAvatar controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 
@@ -277,4 +288,3 @@ module.exports = {
     showUserMealPlans,
     getFollowList
 };
-

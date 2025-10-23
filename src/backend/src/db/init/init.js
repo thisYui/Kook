@@ -2,7 +2,7 @@ const { PrismaClient } = require('@prisma/client');
 const { seedAdminAccounts } = require('./admin.init');
 const { seedIngredientCatalog } = require('./ingredient_catalog.init');
 const { seedTags } = require('./tag.init');
-const { seedBadges } = require('./badge.init');
+//const { seedBadges } = require('./badge.init');
 
 const prisma = new PrismaClient();
 
@@ -34,7 +34,7 @@ async function runAllSeeds() {
         // 4. Seed Badges
         console.log('\nStep 4/4: Seeding Badges...');
         console.log('─'.repeat(60));
-        await seedBadges();
+        //await seedBadges();
 
         // Summary
         console.log('\n' + '═'.repeat(60));
