@@ -53,12 +53,12 @@ const IndexPage = () => {
               </div>
               
               <div className="flex flex-row justify-between pt-12" > 
-                  <CategoryButton name="Breakfast" imageSrc="https://w7.pngwing.com/pngs/154/844/png-transparent-100-vegan-icon.png" gradient="#7082461A"/>
-                  <CategoryButton name="Vegan" imageSrc={vegan} gradient="#6CC63F1A" />
-                  <CategoryButton name="Meat" imageSrc={meat} gradient="#CC261B1A" />
-                  <CategoryButton name="Dessert" imageSrc={dessert} gradient="#F09E001A" />
-                  <CategoryButton name="Lunch" imageSrc={lunch} gradient="#0000000D" />
-                  <CategoryButton name="Chocolate" imageSrc={chocolate} gradient="#0000000D" />
+                  <CategoryButton name="Breakfast" imageSrc={breakfast} />
+                  <CategoryButton name="Vegan" imageSrc={vegan} />
+                  <CategoryButton name="Meat" imageSrc={meat} />
+                  <CategoryButton name="Dessert" imageSrc={dessert} />
+                  <CategoryButton name="Lunch" imageSrc={lunch} />
+                  <CategoryButton name="Chocolate" imageSrc={chocolate} />
               </div>
           </div>  
         </div>

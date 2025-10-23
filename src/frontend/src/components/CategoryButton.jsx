@@ -1,13 +1,9 @@
 import React from 'react';
 import Button from './Button';
+import CATEGORY_COLOR from '../constants/CategoryColor';
 
 
-
-
-
-
-
-export default function CategoryButton({ name, imageSrc, buttonClass, gradient }) {
+export default function CategoryButton({ name, imageSrc, buttonClass }) {
     return (
         <Button
         name={
@@ -26,9 +22,9 @@ export default function CategoryButton({ name, imageSrc, buttonClass, gradient }
             <p className="text-[18px] font-medium mt-2">{name}</p>
             </div>
         }
-        className={`w-36 rounded-2xl flex flex-col p-4 ${buttonClass}`}
+        className={`w-36 rounded-2xl flex flex-col p-4  ${buttonClass}`}
         style={{
-            background: `linear-gradient(to top, ${gradient}, white)`
+            background: `linear-gradient(to top, ${CATEGORY_COLOR[name]}, white)`
         }}
         />
     );
