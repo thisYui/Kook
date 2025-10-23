@@ -5,10 +5,11 @@ export default function Button({
     type, //Button type
     onClick, //Onclick event
     className, //Button's className
+    style
 }) {
 
     return (
-        <button type={type} onclick={onClick} className={className} >
+        <button type={type} onclick={onClick} className={className} style={style}>
             {name}
         </button>
     );
