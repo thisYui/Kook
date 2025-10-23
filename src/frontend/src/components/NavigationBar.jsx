@@ -7,6 +7,7 @@ import { Menu, X } from 'lucide-react';
 const NavigationBar = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
     <nav className="bg-white shadow-sm w-full">
@@ -32,7 +33,7 @@ const NavigationBar = () => {
           </div>
 
           {/* Navigation Links */}
-          <div className="hidden lg:flex space-x-8 absolute left-1/2 transform -translate-x-1/2">
+          <div className="hidden lg:flex space-x-8 absolute left-1/2 transform -translate-x-1/2 z-20">
             <Link to="/" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
               Home
             </Link>
@@ -51,53 +52,61 @@ const NavigationBar = () => {
           </div>
 
           {/* Auth Section */}
-          <div className="flex items-center space-x-4 z-10">
+          <div className="flex items-center space-x-4 z-30">
             {user ? (
               // Logged in: Show user avatar and dropdown
-              <div className="relative group">
-                <Button
+              <div className="relative">
+                <button
                   type="button"
-                  className="flex items-center space-x-2"
-                  name={
-                    <>
-                      <img
-                        src={user.avatar || '/default-avatar.png'}
-                        alt={user.name}
-                        className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
-                      />
-                      <span className="hidden lg:block font-medium text-gray-900">{user.name}</span>
-                    </>
-                  }
-                />
+                  className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+                  onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                  onBlur={(e) => {
+                    // Close dropdown when clicking outside
+                    if (!e.currentTarget.parentElement.contains(e.relatedTarget)) {
+                      setTimeout(() => setIsDropdownOpen(false), 150);
+                    }
+                  }}
+                >
+                  <img
+                    src={user.avatar || '/default-avatar.png'}
+                    alt={user.name}
+                    className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                  />
+                  <span className="hidden lg:block font-medium text-gray-900">{user.name}</span>
+                </button>
                 
                 {/* Dropdown menu */}
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 hidden group-hover:block z-20">
-                  <Link 
-                    to="/profile" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                {isDropdownOpen && (
+                  <div 
+                    className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
                   >
-                    Profile
-                  </Link>
-                  <Link 
-                    to="/settings" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    Settings
-                  </Link>
-                  <Link 
-                    to="/notebook" 
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                  >
-                    My Recipes
-                  </Link>
-                  <hr className="my-1" />
-                  <Button
-                    onClick={logout}
-                    type="button"
-                    name="Sign out"
-                    className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
-                  />
-                </div>
+                    <Link 
+                      to="/settings" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                    <Link 
+                      to="/notebook" 
+                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsDropdownOpen(false)}
+                    >
+                      My Recipes
+                    </Link>
+                    <hr className="my-1" />
+                    <button
+                      onClick={() => {
+                        setIsDropdownOpen(false);
+                        logout();
+                      }}
+                      type="button"
+                      className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >
+                      Sign out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
               // Not logged in: Show Sign in and Get Started buttons
