@@ -324,6 +324,7 @@ module.exports = {
     changeTheme,
     getUserAllergies,
     addAllergy,
+    deleteAllergy,
     getUserProfile,
     markNotificationsSeen,
     deleteUserAccount,

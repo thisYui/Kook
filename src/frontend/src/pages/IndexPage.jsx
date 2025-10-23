@@ -4,14 +4,14 @@ import RecipeHeroCarousel from '../components/RecipeHeroCarousel';
 import Button from "../components/Button";
 
 //Category import img test
-import breakfast from "../assets/categories/breakfast.png";
-import vegan from "../assets/categories/vegan.png";
-import meat from "../assets/categories/meat.png";
-import dessert from "../assets/categories/dessert.png";
-import lunch from "../assets/categories/lunch.png";
-import chocolate from "../assets/categories/chocolate.png";
+// import breakfast from "../assets/categories/breakfast.png";
+// import vegan from "../assets/categories/vegan.png";
+// import meat from "../assets/categories/meat.png";
+// import dessert from "../assets/categories/dessert.png";
+// import lunch from "../assets/categories/lunch.png";
+// import chocolate from "../assets/categories/chocolate.png";
 
-import CategoryButton from "../components/CategoryButton";
+// import CategoryButton from "../components/CategoryButton";
 
 const IndexPage = () => {
   return (
@@ -120,7 +120,7 @@ const IndexPage = () => {
             />
           </div>
         </div>
-        <div className="Category-Box my-10 px-10">
+        {/* <div className="Category-Box my-10 px-10">
           <div className="flex flex-row justify-between mb-5">
             <h2 className="text-[38px] font-medium">Category</h2>
             <Button
@@ -137,7 +137,7 @@ const IndexPage = () => {
             <CategoryButton name="Lunch" imageSrc={lunch} />
             <CategoryButton name="Chocolate" imageSrc={chocolate} />
           </div>
-        </div>
+        </div> */}
       </main>
     </div>
   );
