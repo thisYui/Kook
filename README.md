@@ -87,7 +87,7 @@ CLIENT_URL="http://localhost:5173"
 net start MongoDB
 
 # Linux/Mac
-sudo systemctl start mongod
+sudo systemctl start mongodb
 ```
 
 ##### Kết nối và tạo database (tự động tạo khi chạy app)
@@ -107,8 +107,12 @@ npm install -D prisma
 # Cài đặt Prisma Client
 npm install @prisma/client
 
+# Nếu không có schema permissions. Chay lệnh sau trước khi migrate:
+psql -U postgres -d kook_db -c "GRANT ALL ON SCHEMA public TO kook_user; GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA public TO kook_user; GRANT ALL PRIVILEGES ON ALL SEQUENCES IN SCHEMA public TO kook_user; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO kook_user; ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO kook_user;"
+
 # Chạy migration để tạo schema
 npx prisma migrate dev --name init_schema
+
 
 # Generate Prisma Client
 npx prisma generate
