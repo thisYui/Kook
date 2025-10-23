@@ -5,40 +5,35 @@ import authService from '../services/authService.js';
 export const authApi = {
     // Login user
     login: async (email, password, rememberMe = false) => {
-        console.log(rememberMe)
         const response = await apiClient.post('/api/auth/login', {
             email,
             password,
             rememberMe: rememberMe
         });
 
-        // Backend returns: { success: true, uid, user, remember_me, token?, refresh_token?, expires_in? }
+        // Backend always returns: { success: true, uid, user, remember_me, token, refresh_token, expires_in }
         const loginData = response.data;
 
-        // Handle login based on rememberMe
-        if (rememberMe && loginData.token) {
-            // Token-based login (rememberMe = true)
-            authService.handleLogin({
-                token: loginData.token,
-                refresh_token: loginData.refresh_token,
-                expires_in: loginData.expires_in,
-                user: loginData.user,
-                remember_me: rememberMe
-            });
+        // Backend now always returns token (with different expiration times)
+        if (loginData.token) {
+            // Save tokens with rememberMe flag (affects storage location)
+            authService.setTokens(
+                loginData.token,
+                loginData.refresh_token,
+                loginData.expires_in || 3600,
+                rememberMe
+            );
             setAuthToken(loginData.token);
-        } else {
-            // Session-only login (rememberMe = false)
-            if (loginData.user) {
-                authService.setUserData(loginData.user, false); // Use sessionStorage
-            }
-            // Clear any existing tokens
-            setAuthToken(null);
+        }
+
+        // Save user data
+        if (loginData.user) {
+            authService.setUserData(loginData.user, rememberMe);
         }
 
         // Store UID
         if (loginData.uid) {
-            const storage = rememberMe ? localStorage : sessionStorage;
-            storage.setItem('uid', loginData.uid);
+            authService.setUserId(loginData.uid, rememberMe);
         }
 
         return loginData;
@@ -65,91 +60,96 @@ export const authApi = {
         // Backend returns: { success: true, message, data: { uid, token, refresh_token, expires_in, user } }
         if (response.data.data && response.data.data.token) {
             const confirmData = response.data.data;
-            authService.handleLogin({
-                token: confirmData.token,
-                refresh_token: confirmData.refresh_token,
-                expires_in: confirmData.expires_in,
-                user: confirmData.user,
-                remember_me: true // Auto login after confirm OTP
-            });
+            authService.setTokens(
+                confirmData.token,
+                confirmData.refresh_token,
+                confirmData.expires_in || 3600,
+                true // Auto login after confirm OTP with rememberMe = true
+            );
             setAuthToken(confirmData.token);
+
+            // Save user data
+            if (confirmData.user) {
+                authService.setUserData(confirmData.user, true);
+            }
 
             // Store UID
             if (confirmData.uid) {
-                localStorage.setItem('uid', confirmData.uid);
+                authService.setUserId(confirmData.uid, true);
             }
         }
 
         return response.data;
     },
 
-    // Request OTP
-    requestOTP: async (email) => {
-        const response = await apiClient.post('/api/auth/send-otp', {
+    // Resend OTP
+    resendOTP: async (email) => {
+        const response = await apiClient.post('/api/auth/resend', {
             email
         });
-        // Backend returns: { success: true, message, data: { expires_in } }
+        // Backend returns: { success: true, message, data: { email, expires_in } }
         return response.data;
     },
 
-    // Verify token
-    verifyToken: async (token) => {
-        const response = await apiClient.post('/api/auth/verify-token', {
-            token
-        });
-        // Backend returns: { success: true, message, data: decoded }
-        return response.data;
+    // Logout user
+    logout: async () => {
+        try {
+            // Get token data before clearing
+            const token = authService.getToken();
+
+            if (token) {
+                // Call backend logout to revoke token
+                await apiClient.post('/api/auth/logout');
+            }
+        } catch (error) {
+            console.error('Logout API error:', error);
+            // Continue with local logout even if API fails
+        } finally {
+            // Clear local auth data
+            authService.clearAuth();
+            setAuthToken(null);
+        }
     },
 
-    // Refresh token
-    refreshToken: async (oldToken) => {
-        const response = await apiClient.post('/api/auth/refresh-token', {
-            token: oldToken
+    // Refresh access token
+    refreshToken: async (refreshToken) => {
+        const response = await apiClient.post('/api/auth/refresh', {
+            refresh_token: refreshToken
         });
 
-        // Backend returns: { success: true, message, data: { token, expires_in } }
-        if (response.data.data && response.data.data.token) {
-            const tokenData = response.data.data;
-            authService.setTokens(
-                tokenData.token,
-                oldToken, // Keep old refresh token
-                tokenData.expires_in || 3600
-            );
+        // Backend returns: { success: true, token, expires_in }
+        const tokenData = response.data;
+
+        if (tokenData.token) {
             setAuthToken(tokenData.token);
         }
 
+        return tokenData;
+    },
+
+    // Change password
+    changePassword: async (oldPassword, newPassword) => {
+        const response = await apiClient.post('/api/auth/change-password', {
+            old_password: oldPassword,
+            new_password: newPassword
+        });
         return response.data;
     },
 
-    // Logout
-    logout: async () => {
-        const token = authService.getToken();
+    // Reset password request
+    resetPassword: async (email) => {
+        const response = await apiClient.post('/api/auth/reset-password', {
+            email
+        });
+        return response.data;
+    },
 
-        // If no token, just clear local auth and return success
-        if (!token) {
-            authService.logout();
-            setAuthToken(null);
-            return { success: true, message: 'Logged out successfully!' };
-        }
-
-        try {
-            // Backend expects: { token: "jwt_token" }
-            // Backend will decode token to get JTI and revoke it
-            const response = await apiClient.post('/api/auth/logout', {
-                token: token,
-            });
-
-            // Clear local auth after successful backend logout
-            authService.logout();
-            setAuthToken(null);
-
-            return response.data;
-        } catch (error) {
-            // Clear auth even if logout request fails
-            authService.logout();
-            setAuthToken(null);
-            throw error;
-        }
+    // Change email
+    changeEmail: async (newEmail) => {
+        const response = await apiClient.post('/api/auth/change-email', {
+            new_email: newEmail
+        });
+        return response.data;
     },
 };
 

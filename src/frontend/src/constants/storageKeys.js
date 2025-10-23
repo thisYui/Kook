@@ -9,7 +9,7 @@ export const STORAGE_KEYS = {
     TOKEN_EXPIRY: 'token_expiry',
     USER_DATA: 'user_data',
     UID: 'uid',
+    REMEMBER_ME: 'remember_me',
 };
 
 export default STORAGE_KEYS;
-

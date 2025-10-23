@@ -23,7 +23,6 @@ class JwtTokenRepository {
                 jti: jti,
                 type: type,
                 exp: exp,
-                //device_name: deviceInfo.device || null,
                 user_agent: deviceInfo.userAgent || null,
                 ip_address: deviceInfo.ip || null,
             }

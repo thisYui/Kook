@@ -5,6 +5,7 @@ import Button from "../components/Button.jsx";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from 'react-i18next';
 import { authApi } from '../api/auth';
+import authService from '../services/authService';
 import '../i18n.jsx'
 
 
@@ -50,17 +51,36 @@ export default function LoginPage() {
       const response = await authApi.login(
         formData.email,
         formData.password,
-        formData.remember // Pass remember checkbox value
+        formData.remember
       );
 
       if (response.success) {
         console.log("Login successful!", response);
 
+        // Save authentication data using authService
+        // Backend always returns token now (with different expiration times)
+        if (response.token) {
+          authService.setTokens(
+            response.token,
+            response.refresh_token,
+            response.expires_in || 3600,
+            formData.remember // rememberMe flag
+          );
+        }
+
+        if (response.user) {
+          authService.setUserData(response.user, formData.remember);
+        }
+
+        if (response.uid) {
+          authService.setUserId(response.uid, formData.remember);
+        }
+
         // Show appropriate message based on remember option
         if (formData.remember) {
-          console.log("Token saved - you will stay logged in");
+          console.log("Token saved to localStorage - you will stay logged in");
         } else {
-          console.log("Session only - you will be logged out when browser closes");
+          console.log("Token saved to sessionStorage - you will be logged out when browser closes");
         }
 
         // Redirect to home page

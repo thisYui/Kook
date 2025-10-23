@@ -57,27 +57,21 @@ class AuthService {
             // 7. Return user data (exclude password_hash)
             const { password_hash: _, ...userWithoutPassword } = user;
 
-            // 8. Prepare response based on rememberMe option
+            // 8. Always generate tokens (with different expiration based on rememberMe)
+            const tokenPair = await jwtTokenService.createTokenPair(user.id, deviceInfo, rememberMe);
+
+            // 9. Prepare response
             const response = {
                 success: true,
                 uid: user.id,
                 user: userWithoutPassword,
-                remember_me: rememberMe
+                remember_me: rememberMe,
+                token: tokenPair.accessToken,
+                refresh_token: tokenPair.refreshToken,
+                expires_in: tokenPair.expiresIn,
             };
 
-            // 9. Only generate and send tokens if rememberMe is true
-            if (rememberMe) {
-                // Create token pair (access + refresh) using JWT service
-                const tokenPair = await jwtTokenService.createTokenPair(user.id, deviceInfo);
-
-                response.token = tokenPair.accessToken;
-                response.refresh_token = tokenPair.refreshToken;
-                response.expires_in = tokenPair.expiresIn;
-
-                logger.info(`User logged in successfully with token: ${email}`);
-            } else {
-                logger.info(`User logged in successfully without token (session only): ${email}`);
-            }
+            logger.info(`User logged in successfully: ${email} (rememberMe: ${rememberMe})`);
 
             return response;
 

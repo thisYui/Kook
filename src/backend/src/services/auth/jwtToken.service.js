@@ -5,9 +5,13 @@ const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 const {
   JWT_ACCESS_TOKEN_EXPIRE,
+  JWT_ACCESS_TOKEN_EXPIRE_REMEMBER,
   JWT_REFRESH_TOKEN_EXPIRE,
+  JWT_REFRESH_TOKEN_EXPIRE_REMEMBER,
   JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
-  JWT_REFRESH_TOKEN_EXPIRE_SECONDS
+  JWT_ACCESS_TOKEN_EXPIRE_REMEMBER_SECONDS,
+  JWT_REFRESH_TOKEN_EXPIRE_SECONDS,
+  JWT_REFRESH_TOKEN_EXPIRE_REMEMBER_SECONDS
 } = require('../../constants');
 
 /**
@@ -20,9 +24,10 @@ class JwtTokenService {
      * Generate JWT access token
      * @param {string} userId - User ID
      * @param {Object} deviceInfo - Device information
+     * @param {boolean} rememberMe - Remember me option
      * @returns {Object} - { token, jti, exp }
      */
-    generateAccessToken(userId, deviceInfo = {}) {
+    generateAccessToken(userId, deviceInfo = {}, rememberMe = false) {
         const jti = crypto.randomBytes(32).toString('hex');
         const iat = Math.floor(Date.now() / 1000);
 
@@ -32,19 +37,24 @@ class JwtTokenService {
             jti: jti,
             device: deviceInfo.device || 'unknown',
             userAgent: deviceInfo.userAgent || 'unknown',
+            rememberMe: rememberMe,
         };
 
+        const expiresIn = rememberMe ? JWT_ACCESS_TOKEN_EXPIRE_REMEMBER : JWT_ACCESS_TOKEN_EXPIRE;
+        const expiresInSeconds = rememberMe ? JWT_ACCESS_TOKEN_EXPIRE_REMEMBER_SECONDS : JWT_ACCESS_TOKEN_EXPIRE_SECONDS;
+
         const token = jwt.sign(payload, process.env.JWT_SECRET || 'your-secret-key', {
-            expiresIn: JWT_ACCESS_TOKEN_EXPIRE,
+            expiresIn: expiresIn,
         });
 
         // Calculate expiration time
-        const exp = iat + JWT_ACCESS_TOKEN_EXPIRE_SECONDS;
+        const exp = iat + expiresInSeconds;
 
         return {
             token,
             jti,
             exp: new Date(exp * 1000),
+            expiresInSeconds,
         };
     }
 
@@ -52,9 +62,10 @@ class JwtTokenService {
      * Generate JWT refresh token
      * @param {string} userId - User ID
      * @param {Object} deviceInfo - Device information
+     * @param {boolean} rememberMe - Remember me option
      * @returns {Object} - { token, jti, exp }
      */
-    generateRefreshToken(userId, deviceInfo = {}) {
+    generateRefreshToken(userId, deviceInfo = {}, rememberMe = false) {
         const jti = crypto.randomBytes(32).toString('hex');
         const iat = Math.floor(Date.now() / 1000);
 
@@ -64,14 +75,18 @@ class JwtTokenService {
             jti: jti,
             device: deviceInfo.device || 'unknown',
             userAgent: deviceInfo.userAgent || 'unknown',
+            rememberMe: rememberMe,
         };
 
+        const expiresIn = rememberMe ? JWT_REFRESH_TOKEN_EXPIRE_REMEMBER : JWT_REFRESH_TOKEN_EXPIRE;
+        const expiresInSeconds = rememberMe ? JWT_REFRESH_TOKEN_EXPIRE_REMEMBER_SECONDS : JWT_REFRESH_TOKEN_EXPIRE_SECONDS;
+
         const token = jwt.sign(payload, process.env.JWT_REFRESH_SECRET || 'your-refresh-secret-key', {
-            expiresIn: JWT_REFRESH_TOKEN_EXPIRE,
+            expiresIn: expiresIn,
         });
 
         // Calculate expiration time
-        const exp = iat + JWT_REFRESH_TOKEN_EXPIRE_SECONDS;
+        const exp = iat + expiresInSeconds;
 
         return {
             token,
@@ -84,19 +99,13 @@ class JwtTokenService {
      * Create and save access token to database
      * @param {string} userId - User ID
      * @param {Object} deviceInfo - Device information
-     * @returns {Object} - { token, jti, exp }
+     * @param {boolean} rememberMe - Remember me option
+     * @returns {Object} - { token, jti, exp, expiresInSeconds }
      */
-    async createAccessToken(userId, deviceInfo = {}) {
+    async createAccessToken(userId, deviceInfo = {}, rememberMe = false) {
         try {
             // Generate token
-            const tokenData = this.generateAccessToken(userId, deviceInfo);
-
-            // Prepare safe device info
-            const deviceInfoSafe = {
-                device_name: (deviceInfo.device || '').slice(0, 99) || null,
-                user_agent: (deviceInfo.userAgent || '').slice(0, 255) || null,
-                ip_address: deviceInfo.ip || null,
-            };
+            const tokenData = this.generateAccessToken(userId, deviceInfo, rememberMe);
 
             // Save to database
             await jwtTokenRepository.saveToken(
@@ -104,10 +113,10 @@ class JwtTokenService {
                 tokenData.jti,
                 'ACCESS',
                 tokenData.exp,
-                deviceInfoSafe,
+                deviceInfo,
             );
 
-            logger.info(`Access token created for user: ${userId}`);
+            logger.info(`Access token created for user: ${userId} (rememberMe: ${rememberMe})`);
             return tokenData;
         } catch (error) {
             logger.error('Failed to create access token:', error);
@@ -119,12 +128,13 @@ class JwtTokenService {
      * Create and save refresh token to database
      * @param {string} userId - User ID
      * @param {Object} deviceInfo - Device information
+     * @param {boolean} rememberMe - Remember me option
      * @returns {Object} - { token, jti, exp }
      */
-    async createRefreshToken(userId, deviceInfo = {}) {
+    async createRefreshToken(userId, deviceInfo = {}, rememberMe = false) {
         try {
             // Generate token
-            const tokenData = this.generateRefreshToken(userId, deviceInfo);
+            const tokenData = this.generateRefreshToken(userId, deviceInfo, rememberMe);
 
             // Save to database
             await jwtTokenRepository.saveToken(
@@ -135,7 +145,7 @@ class JwtTokenService {
                 deviceInfo
             );
 
-            logger.info(`Refresh token created for user: ${userId}`);
+            logger.info(`Refresh token created for user: ${userId} (rememberMe: ${rememberMe})`);
             return tokenData;
         } catch (error) {
             logger.error('Failed to create refresh token:', error);
@@ -147,17 +157,18 @@ class JwtTokenService {
      * Create token pair (access + refresh)
      * @param {string} userId - User ID
      * @param {Object} deviceInfo - Device information
-     * @returns {Object} - { accessToken, refreshToken }
+     * @param {boolean} rememberMe - Remember me option
+     * @returns {Object} - { accessToken, refreshToken, expiresIn }
      */
-    async createTokenPair(userId, deviceInfo = {}) {
+    async createTokenPair(userId, deviceInfo = {}, rememberMe = false) {
         try {
-            const accessTokenData = await this.createAccessToken(userId, deviceInfo);
-            const refreshTokenData = await this.createRefreshToken(userId, deviceInfo);
+            const accessTokenData = await this.createAccessToken(userId, deviceInfo, rememberMe);
+            const refreshTokenData = await this.createRefreshToken(userId, deviceInfo, rememberMe);
 
             return {
                 accessToken: accessTokenData.token,
                 refreshToken: refreshTokenData.token,
-                expiresIn: JWT_ACCESS_TOKEN_EXPIRE_SECONDS,
+                expiresIn: accessTokenData.expiresInSeconds,
             };
         } catch (error) {
             logger.error('Failed to create token pair:', error);

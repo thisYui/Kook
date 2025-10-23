@@ -14,22 +14,40 @@ class AuthService {
     }
 
     /**
-     * Get storage (prioritize localStorage, fallback to sessionStorage)
+     * Check if remember me is enabled
+     */
+    getRememberMe() {
+        return localStorage.getItem(STORAGE_KEYS.REMEMBER_ME) === 'true';
+    }
+
+    /**
+     * Set remember me flag
+     */
+    setRememberMe(rememberMe) {
+        if (rememberMe) {
+            localStorage.setItem(STORAGE_KEYS.REMEMBER_ME, 'true');
+        } else {
+            localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
+        }
+    }
+
+    /**
+     * Get storage based on rememberMe flag
      */
     getStorage() {
-        // Check if token exists in localStorage (rememberMe = true)
-        if (localStorage.getItem(STORAGE_KEYS.TOKEN)) {
-            return localStorage;
-        }
-        // Otherwise use sessionStorage (rememberMe = false)
-        return sessionStorage;
+        // Check if remember me is enabled
+        const rememberMe = this.getRememberMe();
+        return rememberMe ? localStorage : sessionStorage;
     }
 
     /**
      * Save authentication tokens
      */
-    setTokens(token, refreshToken, expiresIn = 3600, useLocalStorage = true) {
-        const storage = useLocalStorage ? localStorage : sessionStorage;
+    setTokens(token, refreshToken, expiresIn = 3600, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+
+        // Save remember me flag
+        this.setRememberMe(rememberMe);
 
         storage.setItem(STORAGE_KEYS.TOKEN, token);
         if (refreshToken) {
@@ -48,21 +66,24 @@ class AuthService {
      * Get current access token
      */
     getToken() {
-        return localStorage.getItem(STORAGE_KEYS.TOKEN) || sessionStorage.getItem(STORAGE_KEYS.TOKEN);
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.TOKEN);
     }
 
     /**
      * Get refresh token
      */
     getRefreshToken() {
-        return localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.REFRESH_TOKEN);
     }
 
     /**
      * Get token expiry time
      */
     getTokenExpiry() {
-        const expiry = localStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY) || sessionStorage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
+        const storage = this.getStorage();
+        const expiry = storage.getItem(STORAGE_KEYS.TOKEN_EXPIRY);
         return expiry ? parseInt(expiry, 10) : null;
     }
 
@@ -76,27 +97,18 @@ class AuthService {
     }
 
     /**
-     * Check if user is logged in (with or without token)
+     * Check if user is logged in
      */
     isLoggedIn() {
-        // Check token-based authentication
         const token = this.getToken();
-        if (token && !this.isTokenExpired()) {
-            return true;
-        }
-
-        // Check session-based authentication (no token, but user data exists)
-        const sessionUser = sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
-        const sessionUid = sessionStorage.getItem(STORAGE_KEYS.UID);
-
-        return !!(sessionUser || sessionUid);
+        return !!(token && !this.isTokenExpired());
     }
 
     /**
      * Save user data
      */
-    setUserData(userData, useLocalStorage = true) {
-        const storage = useLocalStorage ? localStorage : sessionStorage;
+    setUserData(userData, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
         storage.setItem(STORAGE_KEYS.USER_DATA, JSON.stringify(userData));
     }
 
@@ -104,32 +116,42 @@ class AuthService {
      * Get user data
      */
     getUserData() {
-        const data = localStorage.getItem(STORAGE_KEYS.USER_DATA) || sessionStorage.getItem(STORAGE_KEYS.USER_DATA);
+        const storage = this.getStorage();
+        const data = storage.getItem(STORAGE_KEYS.USER_DATA);
         return data ? JSON.parse(data) : null;
+    }
+
+    /**
+     * Save user ID
+     */
+    setUserId(uid, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem(STORAGE_KEYS.UID, uid);
     }
 
     /**
      * Get user ID
      */
     getUserId() {
-        return localStorage.getItem(STORAGE_KEYS.UID) || sessionStorage.getItem(STORAGE_KEYS.UID);
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.UID);
     }
 
     /**
      * Clear all authentication data
      */
     clearAuth() {
-        localStorage.removeItem(STORAGE_KEYS.TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
-        localStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        localStorage.removeItem(STORAGE_KEYS.UID);
+        // Clear from both storages
+        [localStorage, sessionStorage].forEach(storage => {
+            storage.removeItem(STORAGE_KEYS.TOKEN);
+            storage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
+            storage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
+            storage.removeItem(STORAGE_KEYS.USER_DATA);
+            storage.removeItem(STORAGE_KEYS.UID);
+        });
 
-        sessionStorage.removeItem(STORAGE_KEYS.TOKEN);
-        sessionStorage.removeItem(STORAGE_KEYS.REFRESH_TOKEN);
-        sessionStorage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
-        sessionStorage.removeItem(STORAGE_KEYS.USER_DATA);
-        sessionStorage.removeItem(STORAGE_KEYS.UID);
+        // Clear remember me flag
+        localStorage.removeItem(STORAGE_KEYS.REMEMBER_ME);
 
         // Cancel scheduled refresh
         if (this.refreshTokenTimeout) {
@@ -180,6 +202,7 @@ class AuthService {
 
         this.isRefreshing = true;
         const refreshToken = this.getRefreshToken();
+        const rememberMe = this.getRememberMe(); // Get current rememberMe flag
 
         if (!refreshToken) {
             this.isRefreshing = false;
@@ -198,10 +221,12 @@ class AuthService {
             const tokenData = response.data || response;
 
             if (tokenData.token) {
+                // Keep the same rememberMe flag when refreshing
                 this.setTokens(
                     tokenData.token,
                     refreshToken, // Keep same refresh token
-                    tokenData.expires_in || 3600
+                    tokenData.expires_in || 3600,
+                    rememberMe // Use the same rememberMe flag
                 );
 
                 // Notify all subscribers

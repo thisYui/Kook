@@ -127,7 +127,6 @@ model JwtToken {
   jti          String    @unique @db.VarChar(64)
   type         TokenType @default(REFRESH)
   hashed_token String?   @db.VarChar(255)
-  device_name  String?   @db.VarChar(100)
   user_agent   String?   @db.Text
   ip_address   String?   @db.VarChar(45)
   exp          DateTime  @db.Timestamp

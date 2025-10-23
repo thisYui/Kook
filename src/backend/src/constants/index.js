@@ -6,14 +6,16 @@ module.exports = {
   OTP_RESEND_COOLDOWN: 60, // 1 minute in seconds
 
   // JWT Constants
-  JWT_ACCESS_TOKEN_EXPIRE: '15m',
-  JWT_REFRESH_TOKEN_EXPIRE: '7d',
-  JWT_REMEMBER_ME_EXPIRE: '30d',
+  JWT_ACCESS_TOKEN_EXPIRE: '1h', // Normal session: 1 hour
+  JWT_ACCESS_TOKEN_EXPIRE_REMEMBER: '7d', // Remember me: 7 days
+  JWT_REFRESH_TOKEN_EXPIRE: '7d', // Normal: 7 days
+  JWT_REFRESH_TOKEN_EXPIRE_REMEMBER: '30d', // Remember me: 30 days
 
   // JWT Token Expiration in seconds (for calculation)
   JWT_ACCESS_TOKEN_EXPIRE_SECONDS: 3600, // 1 hour
+  JWT_ACCESS_TOKEN_EXPIRE_REMEMBER_SECONDS: 7 * 24 * 3600, // 7 days
   JWT_REFRESH_TOKEN_EXPIRE_SECONDS: 7 * 24 * 3600, // 7 days
-  JWT_REMEMBER_ME_EXPIRE_SECONDS: 30 * 24 * 3600, // 30 days
+  JWT_REFRESH_TOKEN_EXPIRE_REMEMBER_SECONDS: 30 * 24 * 3600, // 30 days
 
   // Bcrypt
   BCRYPT_SALT_ROUNDS: 10,
