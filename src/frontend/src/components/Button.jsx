@@ -9,7 +9,7 @@ export default function Button({
 }) {
 
     return (
-        <button type={type} onclick={onClick} className={className} style={style}>
+        <button type={type} onClick={onClick} className={className} style={style}>
             {name}
         </button>
     );
