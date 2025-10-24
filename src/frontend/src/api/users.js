@@ -71,6 +71,7 @@ export const usersApi = {
                 uid,
                 token,
                 ingredient_key: ingredientKey
+            }
         });
         return response.data;
     },
@@ -106,7 +107,6 @@ export const usersApi = {
         const response = await apiClient.delete('/api/users/delete-account', {
             data: {
                 uid,
-                token,
                 token
             }
         });
@@ -161,7 +161,8 @@ export const usersApi = {
         const uid = authService.getUserId();
         const token = authService.getToken();
         const response = await apiClient.post('/api/users/show-user-notebook', {
-            uid
+            uid,
+            token
         });
         return response.data;
     },
@@ -195,7 +196,7 @@ export const usersApi = {
         const token = authService.getToken();
         const response = await apiClient.post('/api/users/get-follow-list', {
             uid,
-            toke
+            token
         });
         return response.data;
     },
