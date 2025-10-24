@@ -29,6 +29,17 @@ export const authApi = {
         // Save user data
         if (loginData.user) {
             authService.setUserData(loginData.user, rememberMe);
+
+            // Save theme, language, and role from user data
+            if (loginData.user.theme) {
+                authService.setTheme(loginData.user.theme, rememberMe);
+            }
+            if (loginData.user.language) {
+                authService.setLanguage(loginData.user.language, rememberMe);
+            }
+            if (loginData.user.role) {
+                authService.setRole(loginData.user.role, rememberMe);
+            }
         }
 
         // Store UID
@@ -71,6 +82,17 @@ export const authApi = {
             // Save user data
             if (confirmData.user) {
                 authService.setUserData(confirmData.user, true);
+
+                // Save theme, language, and role from user data
+                if (confirmData.user.theme) {
+                    authService.setTheme(confirmData.user.theme, true);
+                }
+                if (confirmData.user.language) {
+                    authService.setLanguage(confirmData.user.language, true);
+                }
+                if (confirmData.user.role) {
+                    authService.setRole(confirmData.user.role, true);
+                }
             }
 
             // Store UID

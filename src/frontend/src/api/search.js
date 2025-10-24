@@ -1,5 +1,5 @@
 import apiClient from './apiClient';
-import authService from '../services/authService';
+
 /**
  * Search API methods
  * Token is automatically added by apiClient interceptor for authenticated searches
@@ -14,10 +14,8 @@ export const searchApi = {
      * @returns {Promise<Object>} The search results
      */
     searchByIngredient: async (ingredientID = null, text = null, page = 1, limit = 20) => {
-        const token = authService.getToken();
         const response = await apiClient.post('/api/search/search-by-ingredient', {
             ingredientID,
-            token,
             text,
             page,
             limit
@@ -33,10 +31,8 @@ export const searchApi = {
      * @returns {Promise<Object>} The search results
      */
     searchByUserName: async (username, page = 1, limit = 20) => {
-        const token = authService.getToken();
         const response = await apiClient.post('/api/search/search-by-user-name', {
             username,
-            token,
             page,
             limit
         });
@@ -51,10 +47,8 @@ export const searchApi = {
      * @returns {Promise<Object>} The search results
      */
     searchByTitle: async (title, page = 1, limit = 20) => {
-        const token = authService.getToken();
         const response = await apiClient.post('/api/search/search-by-title', {
             title,
-            token,
             page,
             limit
         });
@@ -69,10 +63,8 @@ export const searchApi = {
      * @returns {Promise<Object>} The search results
      */
     advancedSearch: async (filters, page = 1, limit = 20) => {
-        const token = authService.getToken();
         const response = await apiClient.post('/api/search/advanced', {
             ...filters,
-            token,
             page,
             limit
         });

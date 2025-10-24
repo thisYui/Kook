@@ -138,6 +138,54 @@ class AuthService {
     }
 
     /**
+     * Save theme
+     */
+    setTheme(theme, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem(STORAGE_KEYS.THEME, theme);
+    }
+
+    /**
+     * Get theme
+     */
+    getTheme() {
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.THEME);
+    }
+
+    /**
+     * Save language
+     */
+    setLanguage(language, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem(STORAGE_KEYS.LANGUAGE, language);
+    }
+
+    /**
+     * Get language
+     */
+    getLanguage() {
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.LANGUAGE);
+    }
+
+    /**
+     * Save role
+     */
+    setRole(role, rememberMe = false) {
+        const storage = rememberMe ? localStorage : sessionStorage;
+        storage.setItem(STORAGE_KEYS.ROLE, role);
+    }
+
+    /**
+     * Get role
+     */
+    getRole() {
+        const storage = this.getStorage();
+        return storage.getItem(STORAGE_KEYS.ROLE);
+    }
+
+    /**
      * Clear all authentication data
      */
     clearAuth() {
@@ -148,6 +196,9 @@ class AuthService {
             storage.removeItem(STORAGE_KEYS.TOKEN_EXPIRY);
             storage.removeItem(STORAGE_KEYS.USER_DATA);
             storage.removeItem(STORAGE_KEYS.UID);
+            storage.removeItem(STORAGE_KEYS.THEME);
+            storage.removeItem(STORAGE_KEYS.LANGUAGE);
+            storage.removeItem(STORAGE_KEYS.ROLE);
         });
 
         // Clear remember me flag

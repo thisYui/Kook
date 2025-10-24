@@ -6,9 +6,7 @@ export const postsApi = {
     // Create a new post - Backend expects: uid, title, description, images, tags, countryCode, recipeData
     newPost: async (postData) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const {
-            token,
             title,
             description,
             images,
@@ -55,10 +53,8 @@ export const postsApi = {
     // Rate a post - Backend expects: uid, postID, rating
     ratePost: async (postID, rating) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/rating-post', {
             uid,
-            token,
             postID,
             rating
         });
@@ -68,10 +64,8 @@ export const postsApi = {
     // Comment on a post - Backend expects: uid, postID, content
     commentPost: async (postID, content) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/new-comment-post', {
             uid,
-            token,
             postID,
             content
         });
@@ -81,11 +75,9 @@ export const postsApi = {
     // Delete a comment - Backend expects: uid, commentId
     deleteCommentPost: async (commentId) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/delete-comment-post', {
             data: {
                 uid,
-            token,
                 commentId
             }
         });
@@ -95,11 +87,9 @@ export const postsApi = {
     // Delete a post - Backend expects: uid, postID
     deletePost: async (postID) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/delete-post', {
             data: {
                 uid,
-            token,
                 postID
             }
         });
@@ -109,10 +99,8 @@ export const postsApi = {
     // Repost - Backend expects: uid, postID
     repost: async (postID) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/repost', {
             uid,
-            token,
             postID
         });
         return response.data;
@@ -121,11 +109,9 @@ export const postsApi = {
     // Cancel repost - Backend expects: uid, postID
     cancelRepost: async (postID) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/cancel-repost', {
             data: {
                 uid,
-                token,
                 postID
             }
         });
@@ -135,10 +121,8 @@ export const postsApi = {
     // Save post to notebook - Backend expects: uid, postID
     saveToNotebook: async (postID) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.post('/api/posts/save-to-notebook', {
             uid,
-            token,
             postID
         });
         return response.data;
@@ -147,11 +131,9 @@ export const postsApi = {
     // Remove post from notebook - Backend expects: uid, postID
     removeFromNotebook: async (postID) => {
         const uid = authService.getUserId();
-        const token = authService.getToken();
         const response = await apiClient.delete('/api/posts/remove-from-notebook', {
             data: {
                 uid,
-            token,
                 postID
             }
         });
@@ -170,7 +152,6 @@ export const postsApi = {
             params: {
                 uid: targetUid,
                 page,
-                token,
                 limit
             }
         });

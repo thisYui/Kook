@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import { useUser } from '../hooks/useUser';
 import Button from './Button';
 import { AuthorAvatar } from './AuthorInfo';
 import { Menu, X } from 'lucide-react';
 
 const NavigationBar = () => {
-  const { user, logout } = useAuth();
+  const { logout } = useAuth();
+  const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 

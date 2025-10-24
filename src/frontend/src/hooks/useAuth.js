@@ -4,10 +4,11 @@ import authService from '../services/authService.js';
 
 /**
  * Custom hook for authentication
+ * Only handles authentication state and token management
+ * For user data, use useUser hook instead
  */
 export const useAuth = () => {
     const [isLoggedIn, setIsLoggedIn] = useState(authService.isLoggedIn());
-    const [user, setUser] = useState(authService.getUserData());
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
 
@@ -17,7 +18,6 @@ export const useAuth = () => {
             setLoading(true);
             const isValid = await authService.initialize();
             setIsLoggedIn(isValid);
-            setUser(authService.getUserData());
             setLoading(false);
         };
 
@@ -27,7 +27,6 @@ export const useAuth = () => {
         const handleStorageChange = (e) => {
             if (e.key === 'token') {
                 setIsLoggedIn(authService.isLoggedIn());
-                setUser(authService.getUserData());
             }
         };
 
@@ -39,7 +38,6 @@ export const useAuth = () => {
         const { authApi } = await import('../api');
         const response = await authApi.login(email, password, rememberMe);
         setIsLoggedIn(true);
-        setUser(authService.getUserData());
         return response;
     };
 
@@ -56,23 +54,14 @@ export const useAuth = () => {
         // Clear local auth data using correct method
         authService.logout();
         setIsLoggedIn(false);
-        setUser(null);
         navigate('/login');
-    };
-
-    const updateUser = (updates) => {
-        authService.updateUserData(updates);
-        setUser(authService.getUserData());
     };
 
     return {
         isLoggedIn,
-        user,
         loading,
         login,
         logout,
-        updateUser,
-        userId: authService.getCurrentUserId(),
     };
 };
 

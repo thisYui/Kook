@@ -1,5 +1,4 @@
 import apiClient from './apiClient';
-import authService from '../services/authService';
 
 /**
  * Overview API methods
@@ -34,7 +33,6 @@ export const overviewApi = {
      * @returns {Promise<Object>} Recommended recipes
      */
     getRecommendedRecipes: async () => {
-        const token = authService.getToken();
         const response = await apiClient.get('/api/overview/recommended');
         return response.data;
     },

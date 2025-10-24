@@ -10,6 +10,9 @@ export const STORAGE_KEYS = {
     USER_DATA: 'user_data',
     UID: 'uid',
     REMEMBER_ME: 'remember_me',
+    THEME: 'theme',
+    LANGUAGE: 'language',
+    ROLE: 'role',
 };
 
 export default STORAGE_KEYS;
