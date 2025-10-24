@@ -15,23 +15,34 @@ const {
     showUserNotebook,
     overviewUserMealPlans,
     showUserMealPlans,
-    getFollowList
+    getFollowers,
+    getFollowing,
+    followUser,
+    unfollowUser
 } = require('../controllers/userControllers');
+const { authenticateToken } = require("../middleware/authMiddleware");
 
-router.post("/change-lang", changeLanguage);
-router.post("/change-theme", changeTheme);
+
+// Setting
+router.post("/change-lang", authenticateToken, changeLanguage);
+router.post("/change-theme", authenticateToken, changeTheme);
+router.post("/reset-password", authenticateToken, resetPassword);
+router.post("/change-email", authenticateToken, changeEmail);
+router.post("/change-avatar", authenticateToken, changeAvatar);
+router.delete("/delete-account", authenticateToken, deleteUserAccount);
+
+// User data
 router.post("/allergies", getUserAllergies);
 router.post("/add-allergy", addAllergy);
-router.delete("/delete-allergy", deleteAllergy);
 router.post("/get-profile", getUserProfile);
 router.post("/seen-notifications", markNotificationsSeen);
-router.delete("/delete-account", deleteUserAccount);
-router.post("/reset-password", resetPassword);
-router.post("/change-email", changeEmail);
-router.post("/change-avatar", changeAvatar);
 router.post("/show-notebook", showUserNotebook);
 router.post("/overview-meal-plans", overviewUserMealPlans);
 router.post("/show-meal-plans", showUserMealPlans);
-router.post("/get-follow-list", getFollowList);
+router.post("/follow", followUser);
+router.post("unfollow", unfollowUser);
+router.post("/list-following", getFollowing);
+router.post("/list-followers", getFollowers);
+router.delete("/delete-allergy", deleteAllergy);
 
 module.exports = router;

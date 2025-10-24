@@ -243,6 +243,10 @@ async function showUserNotebook(req, res) {
     const { uid, limit, offset } = req.body;
 
     try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
         const result = await notebookService.showUserNotebook(uid, { limit, offset });
 
         res.status(200).json({
@@ -264,6 +268,10 @@ async function overviewUserMealPlans(req, res) {
     const { uid, limit, offset, activeOnly } = req.body;
 
     try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
         const result = await mealPlanService.overviewUserMealPlans(uid, { limit, offset, activeOnly });
 
         res.status(200).json({
@@ -285,6 +293,10 @@ async function showUserMealPlans(req, res) {
     const { uid, mealPlanID } = req.body;
 
     try {
+        if (!uid || !mealPlanID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
         const result = await mealPlanService.showUserMealPlans(uid, mealPlanID);
 
         res.status(200).json({
@@ -299,14 +311,18 @@ async function showUserMealPlans(req, res) {
 }
 
 /**
- * Get follow list (followers and following)
- * @route POST /api/users/get-follow-list
+ * Get user's followers (people who follow this user)
+ * @route POST /api/users/get-followers
  */
-async function getFollowList(req, res) {
-    const { uid, type, limit, offset } = req.body;
+async function getFollowers(req, res) {
+    const { uid, limit, offset } = req.body;
 
     try {
-        const result = await followService.getFollowList(uid, { type, limit, offset });
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
+        const result = await followService.getFollowers(uid, { limit, offset });
 
         res.status(200).json({
             success: true,
@@ -314,7 +330,84 @@ async function getFollowList(req, res) {
         });
 
     } catch (error) {
-        logger.error('Error in getFollowList controller:', error);
+        logger.error('Error in getFollowers controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/**
+ * Get user's following (people this user follows)
+ * @route POST /api/users/get-following
+ */
+async function getFollowing(req, res) {
+    const { uid, limit, offset } = req.body;
+
+    try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
+        const result = await followService.getFollowing(uid, { limit, offset });
+
+        res.status(200).json({
+            success: true,
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error in getFollowing controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/**
+ * Follow a user
+ * @route POST /api/users/follow
+ */
+async function followUser(req, res) {
+    const { follower_id, followee_id } = req.body;
+
+    try {
+        if (!follower_id || !followee_id) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Follower ID and Followee ID are required');
+        }
+
+        const result = await followService.followUser(follower_id, followee_id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Followed user successfully',
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error in followUser controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/**
+ * Unfollow a user
+ * @route POST /api/users/unfollow
+ */
+async function unfollowUser(req, res) {
+    const { follower_id, followee_id } = req.body;
+
+    try {
+        if (!follower_id || !followee_id) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Follower ID and Followee ID are required');
+        }
+
+        const result = await followService.unfollowUser(follower_id, followee_id);
+
+        res.status(200).json({
+            success: true,
+            message: 'Unfollowed user successfully',
+            data: result
+        });
+
+    } catch (error) {
+        logger.error('Error in unfollowUser controller:', error);
         return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
@@ -334,5 +427,8 @@ module.exports = {
     showUserNotebook,
     overviewUserMealPlans,
     showUserMealPlans,
-    getFollowList
+    getFollowers,
+    getFollowing,
+    followUser,
+    unfollowUser
 };

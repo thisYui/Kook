@@ -311,36 +311,21 @@ async function refreshToken(req, res) {
 }
 
 async function logout(req, res) {
-    const { token } = req.body;
-
     try {
-        // If no token provided, just return success (session-based logout)
-        if (!token) {
+        // Token đã được validate bởi authenticateToken middleware
+        // req.user và req.token đã được attach bởi middleware
+
+        if (!req.token || !req.token.jti) {
+            // Nếu không có token info (không nên xảy ra vì đã qua middleware)
             return res.status(200).json({
                 success: true,
                 message: 'Logged out successfully!'
             });
         }
 
-        // Verify and decode token to get JTI
-        let decoded;
-        try {
-            decoded = jwtTokenService.verifyAccessToken(token);
-        } catch (error) {
-            // Even if token is invalid/expired, still return success
-            // User wants to logout anyway
-            logger.warn('Logout with invalid token:', error.message);
-            return res.status(200).json({
-                success: true,
-                message: 'Logged out successfully!'
-            });
-        }
-
-        // Revoke the token
-        if (decoded && decoded.jti) {
-            await jwtTokenService.revokeToken(decoded.jti);
-            logger.info(`User logged out and token revoked: ${decoded.uid}`);
-        }
+        // Revoke the token using JTI from middleware
+        await jwtTokenService.revokeToken(req.token.jti);
+        logger.info(`User logged out and token revoked: ${req.user.id}`);
 
         res.status(200).json({
             success: true,

@@ -22,45 +22,40 @@ class AuthService {
      */
     async login(email, password, rememberMe = false, deviceInfo = {}) {
         try {
-            // 1. Validate input
-            if (!email || !password) {
-                throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Email and password are required');
-            }
-
-            // 2. Find user by email
+            // Find user by email
             const user = await userRepository.findByEmail(email);
             if (!user) {
                 logger.warn(`Login attempt with non-existent email: ${email}`);
                 throw new AppError(ErrorCodes.AUTH_EMAIL_NOT_FOUND);
             }
 
-            // 3. Check if account is verified
+            // Check if account is verified
             if (!user.is_verified) {
                 throw new AppError(ErrorCodes.AUTH_ACCOUNT_NOT_VERIFIED);
             }
 
-            // 4. Check if account is disabled
+            // Check if account is disabled
             if (user.is_disabled) {
                 throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED);
             }
 
-            // 5. Verify password (use password_hash from schema)
+            // Verify password (use password_hash from schema)
             const isValidPassword = await bcrypt.compare(password, user.password_hash);
             if (!isValidPassword) {
                 logger.warn(`Failed login attempt for user: ${email}`);
                 throw new AppError(ErrorCodes.AUTH_INVALID_CREDENTIALS);
             }
 
-            // 6. Update last login time
+            // Update last login time
             await userRepository.updateLastLogin(user.id);
 
-            // 7. Return user data (exclude password_hash)
+            // Return user data (exclude password_hash)
             const { password_hash: _, ...userWithoutPassword } = user;
 
-            // 8. Always generate tokens (with different expiration based on rememberMe)
+            // Always generate tokens (with different expiration based on rememberMe)
             const tokenPair = await jwtTokenService.createTokenPair(user.id, deviceInfo, rememberMe);
 
-            // 9. Prepare response
+            // Prepare response
             const response = {
                 success: true,
                 uid: user.id,
@@ -92,10 +87,6 @@ class AuthService {
      */
     async logout(jti) {
         try {
-            if (!jti) {
-                return { success: true, message: 'No token to revoke' };
-            }
-
             await jwtTokenService.revokeToken(jti);
             return { success: true, message: 'Logged out successfully' };
         } catch (error) {

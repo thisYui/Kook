@@ -1,4 +1,4 @@
-const logger = require('./logger');
+const logger = require('../config/logger');
 const { AppError, ErrorResponse } = require('../utils/errorHandler');
 
 /**
@@ -59,4 +59,3 @@ const errorHandlerMiddleware = (err, req, res, next) => {
 };
 
 module.exports = errorHandlerMiddleware;
-

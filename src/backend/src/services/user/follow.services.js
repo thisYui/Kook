@@ -71,6 +71,90 @@ class FollowService {
     }
 
     /**
+     * Get user's followers (people who follow this user)
+     * @param {string} uid - User ID
+     * @param {Object} options - Query options (limit, offset)
+     * @returns {Object} - Followers list
+     */
+    async getFollowers(uid, options = {}) {
+        try {
+            const { limit = 20, offset = 0 } = options;
+
+            // Get followers
+            const followers = await followRepository.getFollowers(uid, { limit, offset });
+            const followerCount = await followRepository.countFollowers(uid);
+
+            logger.info(`Followers list retrieved for user ${uid}: ${followers.length} followers`);
+
+            return {
+                success: true,
+                uid,
+                followers: followers.map(f => ({
+                    id: f.id,
+                    user_id: f.follower.id,
+                    name: f.follower.name,
+                    email: f.follower.email,
+                    avatar_url: f.follower.avatar_url,
+                    bio: f.follower.bio,
+                    followed_at: f.created_at,
+                })),
+                total: followerCount,
+                limit,
+                offset,
+            };
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Error getting followers:', error);
+            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to get followers');
+        }
+    }
+
+    /**
+     * Get user's following (people this user follows)
+     * @param {string} uid - User ID
+     * @param {Object} options - Query options (limit, offset)
+     * @returns {Object} - Following list
+     */
+    async getFollowing(uid, options = {}) {
+        try {
+            const { limit = 20, offset = 0 } = options;
+
+            // Get following
+            const following = await followRepository.getFollowing(uid, { limit, offset });
+            const followingCount = await followRepository.countFollowing(uid);
+
+            logger.info(`Following list retrieved for user ${uid}: ${following.length} following`);
+
+            return {
+                success: true,
+                uid,
+                following: following.map(f => ({
+                    id: f.id,
+                    user_id: f.followee.id,
+                    name: f.followee.name,
+                    email: f.followee.email,
+                    avatar_url: f.followee.avatar_url,
+                    bio: f.followee.bio,
+                    followed_at: f.created_at,
+                })),
+                total: followingCount,
+                limit,
+                offset,
+            };
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Error getting following:', error);
+            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to get following');
+        }
+    }
+
+    /**
      * Follow a user
      * @param {string} followerId - Follower user ID
      * @param {string} followeeId - Followee user ID
@@ -159,4 +243,3 @@ class FollowService {
 }
 
 module.exports = new FollowService();
-
