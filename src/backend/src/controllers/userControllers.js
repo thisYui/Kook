@@ -136,20 +136,25 @@ async function getUserProfile(req, res) {
     const { uid, senderID } = req.body;
 
     try {
-        if (!uid || !senderID) {
+        // Validate input
+        if (!uid) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
         }
+        if (!senderID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Sender ID is required');
+        }
 
-        // TODO: Validate input
-        // TODO: Get user profile from database
-        // TODO: Check privacy settings
-        // TODO: Return user profile data
+        // Get user profile from service
+        const result = await userService.getUserProfile(uid, senderID);
 
-        res.status(200).json({ message: 'Lấy thông tin hồ sơ thành công!' });
+        res.status(200).json({
+            success: true,
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi lấy thông tin hồ sơ:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in getUserProfile controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
 

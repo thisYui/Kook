@@ -258,6 +258,52 @@ class UserRepository {
             }
         });
     }
+
+    /**
+     * Get user statistics (posts, followers, following count)
+     */
+    async getUserStats(id) {
+        const [postsCount, followersCount, followingCount] = await Promise.all([
+            prisma.post.count({
+                where: {
+                    author_id: id,
+                    is_deleted: false,
+                },
+            }),
+            prisma.follow.count({
+                where: {
+                    followee_id: id,
+                },
+            }),
+            prisma.follow.count({
+                where: {
+                    follower_id: id,
+                },
+            }),
+        ]);
+
+        return {
+            posts_count: postsCount,
+            followers_count: followersCount,
+            following_count: followingCount,
+        };
+    }
+
+    /**
+     * Check if follower is following followee
+     */
+    async isFollowing(followerId, followeeId) {
+        const follow = await prisma.follow.findUnique({
+            where: {
+                follower_id_followee_id: {
+                    follower_id: followerId,
+                    followee_id: followeeId,
+                }
+            }
+        });
+
+        return !!follow;
+    }
 }
 
 module.exports = new UserRepository();

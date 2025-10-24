@@ -321,6 +321,78 @@ class UserService {
     }
 
     /**
+     * Get user profile
+     * @param {string} uid - User ID to get profile
+     * @param {string} senderID - ID of user requesting the profile
+     * @returns {Object} - User profile data with statistics
+     */
+    async getUserProfile(uid, senderID) {
+        try {
+            // Find user by ID
+            const user = await userRepository.findById(uid);
+            if (!user) {
+                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
+            }
+
+            // Check if user is deleted
+            if (user.is_deleted) {
+                throw new AppError(ErrorCodes.USER_DELETED, 'User account has been deleted');
+            }
+
+            // Check if user is disabled
+            if (user.is_disabled) {
+                throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'User account is disabled');
+            }
+
+            // Get user statistics
+            const stats = await userRepository.getUserStats(uid);
+
+            // Check if sender is following this user
+            let isFollowing = false;
+            if (senderID && senderID !== uid) {
+                isFollowing = await userRepository.isFollowing(senderID, uid);
+            }
+
+            // Prepare response
+            const profileData = {
+                uid: user.id,
+                name: user.name,
+                avatar_url: user.avatar_url,
+                bio: user.bio,
+                role: user.role,
+                is_verified: user.is_verified,
+                created_at: user.created_at,
+                stats: {
+                    posts_count: stats.posts_count || 0,
+                    followers_count: stats.followers_count || 0,
+                    following_count: stats.following_count || 0,
+                },
+                is_following: isFollowing,
+                is_own_profile: senderID === uid,
+            };
+
+            // If viewing own profile, include private information
+            if (senderID === uid) {
+                profileData.email = user.email;
+                profileData.language = user.language;
+                profileData.theme = user.theme;
+                profileData.last_login = user.last_login;
+            }
+
+            logger.info(`User ${senderID} viewed profile of user ${uid}`);
+
+            return profileData;
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Error getting user profile:', error);
+            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to get user profile');
+        }
+    }
+
+    /**
      * Validate user exists and is active
      * @param {string} uid - User ID
      * @returns {Object} - User data
