@@ -1,94 +1,111 @@
-import React, { useState } from "react";
+import React from "react";
+import { Moon, Globe } from "lucide-react";
 import Popup from "../Popup";
-import Button from "../Button";
-import Label from "../Label"
-import { Moon, Sun } from "lucide-react";
+import Label from "../Label";
+import { usersApi } from "../../api/users";
+import useUser from "../../hooks/useUser";
 
 export default function SettingPopup({ isOpen, onClose, size }) {
-    const [isDark, setIsDark] = useState(false);
+    const { theme, language, updateTheme, updateLanguage } = useUser();
 
-    const handleChangePassword = () => {
-        alert("Đổi mật khẩu");
+    // ======== ĐỔI THEME ========
+    const handleThemeChange = async (e) => {
+        const newTheme = e.target.value;
+
+        try {
+        await usersApi.changeTheme(newTheme);
+        updateTheme(newTheme);
+
+        // Áp dụng theme vào document
+        if (newTheme === "dark") {
+            document.documentElement.classList.add("dark");
+        } else if (newTheme === "light") {
+            document.documentElement.classList.remove("dark");
+        } else {
+            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+            document.documentElement.classList.toggle("dark", prefersDark);
+        }
+        } catch (error) {
+        console.error("Lỗi khi đổi theme:", error);
+        }
     };
 
-    const handleChangeLanguage = () => {
-        alert("Đổi ngôn ngữ");
-    };
+    const handleLanguageChange = async (e) => {
+        const newLang = e.target.value;
 
-    const handleChangeTheme = () => {
-        setIsDark((prev) => !prev);
-        alert("Đã đổi theme!");
-    };
+        try {
+        await usersApi.changeLanguage(newLang);
+        updateLanguage(newLang);
 
-    const handleLockAccount = () => {
-        alert("Khóa tài khoản");
-    };
-
-    const handleDeleteAccount = () => {
-        alert("Xóa tài khoản vĩnh viễn");
+        console.log(`Đã đổi ngôn ngữ sang ${newLang}`);
+        } catch (error) {
+        console.error("Lỗi khi đổi ngôn ngữ:", error);
+        }
     };
 
     return (
-        <Popup isOpen={isOpen} onClose={onClose} title="Setting" size={size}>
-        <Button
-            name="Change Password"
-            onClick={handleChangePassword}
-            className="border py-3 text-lg"
-        />
-        <div className="border py-3 text-lg">
-            Language
-            <label className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition">
-                <span>Tiếng Việt</span>
-                <Label
-                type="radio"
-                name="language"
-                value="vi"
-                onChange={handleChangeLanguage}
-                checked={language === "vi"}
-                className="m-0"
-                />
-            </label>
+        <Popup isOpen={isOpen} onClose={onClose} title="Cài đặt" size={size}>
+            <div className="border-b pb-4 mb-4">
+                <div className="flex items-center mb-2">
+                <Moon className="w-5 h-5 mr-2" />
+                <h2 className="text-lg font-semibold">Chế độ tối</h2>
+                </div>
 
-            <label className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition">
-                <span>English</span>
-                <Label
-                type="radio"
-                name="language"
-                value="en"
-                onChange={handleChangeLanguage}
-                checked={language === "en"}
-                className="m-0"
-                />
-            </label>
+                <div className="space-y-2">
+                {[
+                    { value: "light", label: "Tắt" },
+                    { value: "dark", label: "Bật" },
+                    { value: "auto", label: "Tự động" }
+                ].map((item) => (
+                    <label
+                    key={item.value}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition"
+                    >
+                    <span>{item.label}</span>
+                    <Label
+                        type="radio"
+                        name="theme"
+                        value={item.value}
+                        onChange={handleThemeChange}
+                        checked={theme === item.value}
+                        className="m-0"
+                    />
+                    </label>
+                ))}
+                </div>
+            </div>
 
-        </div>
+            <div>
+                <div className="flex items-center mb-2">
+                <Globe className="w-5 h-5 mr-2" />
+                <h2 className="text-lg font-semibold">Ngôn ngữ</h2>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
+                Chọn ngôn ngữ hiển thị cho ứng dụng.
+                </p>
 
-        {/* Nút Theme */}
-        <button
-            onClick={handleChangeTheme}
-            className="relative flex items-center justify-center w-full border py-3 text-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition"
-        >
-            {isDark ? (
-            <>
-                Dark Mode <Moon className="absolute right-20 w-5 h-5 ml-3" /> 
-            </>
-            ) : (
-            <>
-                Light Mode <Sun className="absolute right-20 w-5 h-5 ml-3" /> 
-            </>
-            )}
-        </button>
-
-        <Button
-            name="Lock Account"
-            onClick={handleLockAccount}
-            className="border py-3 text-lg"
-        />
-        <Button
-            name="Delete Account"
-            onClick={handleDeleteAccount}
-            className="border py-3 text-lg"
-        />
+                <div className="space-y-2">
+                {[
+                    { value: "vi", label: "Tiếng Việt" },
+                    { value: "en", label: "English" },
+                ].map((item) => (
+                    <label
+                    key={item.value}
+                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition"
+                    >
+                    <span>{item.label}</span>
+                    <Label
+                        type="radio"
+                        name="language"
+                        value={item.value}
+                        onChange={handleLanguageChange}
+                        checked={language === item.value}
+                        className="m-0"
+                    />
+                    </label>
+                ))}
+                </div>
+            </div>
         </Popup>
     );
 }
