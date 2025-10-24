@@ -14,7 +14,7 @@
     "prisma:push": "prisma db push",
     "prisma:reset": "prisma migrate reset",
     "prisma:format": "prisma format",
-    "seed": "node seed.js",
+    "seed": "node src/db/seed/seed.js",
     "db:reset": "npm run prisma:reset && npm run seed",
     "db:init": "node src/db/init/init.js",
     "setup:prisma": "npm install prisma --save-dev && npm install @prisma/client && npm run prisma:init",
