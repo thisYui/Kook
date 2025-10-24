@@ -42,7 +42,7 @@ export const postsApi = {
             formData.append('recipeData', JSON.stringify(recipeData));
         }
 
-        const response = await apiClient.post('/api/posts/post', formData, {
+        const response = await apiClient.post('/api/post/post', formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             }
@@ -53,7 +53,7 @@ export const postsApi = {
     // Rate a post - Backend expects: uid, postID, rating
     ratePost: async (postID, rating) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/posts/rating-post', {
+        const response = await apiClient.post('/api/post/rating-post', {
             uid,
             postID,
             rating
@@ -64,7 +64,7 @@ export const postsApi = {
     // Comment on a post - Backend expects: uid, postID, content
     commentPost: async (postID, content) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/posts/new-comment-post', {
+        const response = await apiClient.post('/api/post/new-comment-post', {
             uid,
             postID,
             content
@@ -75,7 +75,7 @@ export const postsApi = {
     // Delete a comment - Backend expects: uid, commentId
     deleteCommentPost: async (commentId) => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/posts/delete-comment-post', {
+        const response = await apiClient.delete('/api/post/delete-comment-post', {
             data: {
                 uid,
                 commentId
@@ -87,7 +87,7 @@ export const postsApi = {
     // Delete a post - Backend expects: uid, postID
     deletePost: async (postID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/posts/delete-post', {
+        const response = await apiClient.delete('/api/post/delete-post', {
             data: {
                 uid,
                 postID
@@ -99,7 +99,7 @@ export const postsApi = {
     // Repost - Backend expects: uid, postID
     repost: async (postID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/posts/repost', {
+        const response = await apiClient.post('/api/post/repost', {
             uid,
             postID
         });
@@ -109,7 +109,7 @@ export const postsApi = {
     // Cancel repost - Backend expects: uid, postID
     cancelRepost: async (postID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/posts/cancel-repost', {
+        const response = await apiClient.delete('/api/post/cancel-repost', {
             data: {
                 uid,
                 postID
@@ -121,7 +121,7 @@ export const postsApi = {
     // Save post to notebook - Backend expects: uid, postID
     saveToNotebook: async (postID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/posts/save-to-notebook', {
+        const response = await apiClient.post('/api/post/save-to-notebook', {
             uid,
             postID
         });
@@ -131,7 +131,7 @@ export const postsApi = {
     // Remove post from notebook - Backend expects: uid, postID
     removeFromNotebook: async (postID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/posts/remove-from-notebook', {
+        const response = await apiClient.delete('/api/post/remove-from-notebook', {
             data: {
                 uid,
                 postID
@@ -142,13 +142,13 @@ export const postsApi = {
 
     // Get post details - Backend expects: postID (no auth required for public posts)
     getPostDetails: async (postID) => {
-        const response = await apiClient.get(`/api/posts/${postID}`);
+        const response = await apiClient.get(`/api/post/${postID}`);
         return response.data;
     },
 
     // Get user's posts - Backend expects: uid (can be different from logged user)
     getUserPosts: async (targetUid, page = 1, limit = 20) => {
-        const response = await apiClient.get('/api/posts/user', {
+        const response = await apiClient.get('/api/post/user', {
             params: {
                 uid: targetUid,
                 page,

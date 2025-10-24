@@ -6,7 +6,7 @@ export const usersApi = {
     // Change language preference - Backend expects: uid, language
     changeLanguage: async (language) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/change-lang', {
+        const response = await apiClient.post('/api/user/change-lang', {
             uid,
             language
         });
@@ -16,19 +16,9 @@ export const usersApi = {
     // Change theme preference - Backend expects: uid, theme
     changeTheme: async (theme) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/change-theme', {
+        const response = await apiClient.post('/api/user/change-theme', {
             uid,
             theme
-        });
-        return response.data;
-    },
-
-    // Change allergy information - Backend expects: uid, allergies
-    changeAllergyInfo: async (allergies) => {
-        const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/change-allergy', {
-            uid,
-            allergies
         });
         return response.data;
     },
@@ -36,7 +26,7 @@ export const usersApi = {
     // Get user allergies - Backend expects: uid
     getUserAllergies: async () => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/allergies', {
+        const response = await apiClient.post('/api/user/allergies', {
             uid
         });
         return response.data;
@@ -45,7 +35,7 @@ export const usersApi = {
     // Add allergy - Backend expects: uid, ingredient_key
     addAllergy: async (ingredientKey) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/add-allergy', {
+        const response = await apiClient.post('/api/user/add-allergy', {
             uid,
             ingredient_key: ingredientKey
         });
@@ -55,7 +45,7 @@ export const usersApi = {
     // Delete allergy - Backend expects: uid, ingredient_key
     deleteAllergy: async (ingredientKey) => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/users/delete-allergy', {
+        const response = await apiClient.delete('/api/user/delete-allergy', {
             data: {
                 uid,
                 ingredient_key: ingredientKey
@@ -67,7 +57,7 @@ export const usersApi = {
     // Get user profile - Backend expects: uid, senderID
     getUserProfile: async (targetUid) => {
         const senderID = authService.getUserId();
-        const response = await apiClient.post('/api/users/get-profile', {
+        const response = await apiClient.post('/api/user/get-profile', {
             uid: targetUid,
             senderID
         });
@@ -77,7 +67,7 @@ export const usersApi = {
     // Mark notifications as seen - Backend expects: uid, notificationID
     markNotificationsSeen: async (notificationID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/seen-notifications', {
+        const response = await apiClient.post('/api/user/seen-notifications', {
             uid,
             notificationID
         });
@@ -87,7 +77,7 @@ export const usersApi = {
     // Delete user account - Backend expects: uid
     deleteUserAccount: async () => {
         const uid = authService.getUserId();
-        const response = await apiClient.delete('/api/users/delete-account', {
+        const response = await apiClient.delete('/api/user/delete-account', {
             data: {
                 uid
             }
@@ -98,7 +88,7 @@ export const usersApi = {
     // Reset password - Backend expects: uid, newPassword
     resetPassword: async (newPassword) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/auth/reset-password', {
+        const response = await apiClient.post('/api/user/reset-password', {
             uid,
             newPassword
         });
@@ -108,7 +98,7 @@ export const usersApi = {
     // Change email - Backend expects: uid, newEmail
     changeEmail: async (newEmail) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/auth/change-email', {
+        const response = await apiClient.post('/api/user/change-email', {
             uid,
             newEmail
         });
@@ -124,7 +114,7 @@ export const usersApi = {
     // Change avatar - Backend expects: uid, avatarData, formatFile
     changeAvatar: async (avatarData, formatFile) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/auth/change-avatar', {
+        const response = await apiClient.post('/api/user/change-avatar', {
             uid,
             avatarData,
             formatFile
@@ -133,19 +123,24 @@ export const usersApi = {
     },
 
     // Show user notebook - Backend expects: uid
-    showUserNotebook: async () => {
+    showUserNotebook: async (limit, offset) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/show-user-notebook', {
-            uid
+        const response = await apiClient.post('/api/user/show-notebook', {
+            uid,
+            limit,
+            offset
         });
         return response.data;
     },
 
-    // Overview user meal plans - Backend expects: uid
-    overviewUserMealPlans: async () => {
+    // Overview user meal plans - Backend expects: uid, limit, offset, activeOnly
+    overviewUserMealPlans: async (limit, offset, activeOnly) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/overview-user-meal-plans', {
-            uid
+        const response = await apiClient.post('/api/user/overview-meal-plans', {
+            uid,
+            limit,
+            offset,
+            activeOnly
         });
         return response.data;
     },
@@ -153,27 +148,51 @@ export const usersApi = {
     // Show user meal plans - Backend expects: uid, mealPlanID
     showUserMealPlans: async (mealPlanID) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/show-user-meal-plans', {
+        const response = await apiClient.post('/api/user/show-meal-plans', {
             uid,
             mealPlanID
         });
         return response.data;
     },
 
-    // Get follower list
-    getListFollowers: async () => {
-        const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/list-followers', {
-            uid
+    // Follow a user - Backend expects: follower_id, followee_id
+    followUser: async (followeeId) => {
+        const follower_id = authService.getUserId();
+        const response = await apiClient.post('/api/user/follow', {
+            follower_id,
+            followee_id: followeeId
         });
         return response.data;
     },
 
-    // Get following list
-    getListFollowing: async () => {
+    // Unfollow a user - Backend expects: follower_id, followee_id
+    unfollowUser: async (followeeId) => {
+        const follower_id = authService.getUserId();
+        const response = await apiClient.post('/api/user/unfollow', {
+            follower_id,
+            followee_id: followeeId
+        });
+        return response.data;
+    },
+
+    // Get follower list - Backend expects: uid, limit, offset
+    getListFollowers: async (limit, offset) => {
         const uid = authService.getUserId();
-        const response = await apiClient.post('/api/users/list-following', {
-            uid
+        const response = await apiClient.post('/api/user/list-followers', {
+            uid,
+            limit,
+            offset
+        });
+        return response.data;
+    },
+
+    // Get following list - Backend expects: uid, limit, offset
+    getListFollowing: async (limit, offset) => {
+        const uid = authService.getUserId();
+        const response = await apiClient.post('/api/user/list-following', {
+            uid,
+            limit,
+            offset
         });
         return response.data;
     }

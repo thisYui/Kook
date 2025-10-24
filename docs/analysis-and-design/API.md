@@ -268,30 +268,49 @@ http://localhost:3000/api
 
 ---
 
-## 2. User APIs (`/api/user`)
+## 2. User APIs (`/api/users`)
+
+**Note:** Tất cả các API trong section này đều yêu cầu authentication token trong header (trừ một số API đã được đánh dấu):
+```
+Authorization: Bearer <token>
+```
+
+---
 
 ### 2.1. Đổi ngôn ngữ
-**Endpoint:** `POST /api/user/change-lang`
+**Endpoint:** `POST /api/users/change-lang`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
 {
   "uid": "string",
-  "language": "vi | en"
+  "language": "en | vi"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Đổi ngôn ngữ thành công!"
+  "success": true,
+  "data": {
+    "uid": "string",
+    "language": "string"
+  }
 }
 ```
+
+**Supported Languages:**
+- `en` - English
+- `vi` - Tiếng Việt
 
 ---
 
 ### 2.2. Đổi giao diện
-**Endpoint:** `POST /api/user/change-theme`
+**Endpoint:** `POST /api/users/change-theme`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
@@ -304,39 +323,106 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Đổi giao diện thành công!"
+  "success": true,
+  "data": {
+    "uid": "string",
+    "theme": "string"
+  }
 }
 ```
 
+**Supported Themes:**
+- `light` - Giao diện sáng
+- `dark` - Giao diện tối
+- `system` - Theo hệ thống
+
 ---
 
-### 2.3. Cập nhật thông tin dị ứng
-**Endpoint:** `POST /api/user/change-allergy`
+### 2.3. Lấy danh sách dị ứng của người dùng
+**Endpoint:** `POST /api/users/allergies`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
 {
-  "uid": "string",
-  "allergies": [
-    {
-      "ingredientId": "string",
-      "ingredientName": "string"
-    }
-  ]
+  "uid": "string"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Cập nhật thông tin dị ứng thành công!"
+  "success": true,
+  "data": {
+    "allergies": [
+      {
+        "ingredient_key": "string",
+        "ingredient_name": "string",
+        "added_at": "datetime"
+      }
+    ]
+  }
 }
 ```
 
 ---
 
-### 2.4. Lấy thông tin hồ sơ người dùng
-**Endpoint:** `POST /api/user/get-profile`
+### 2.4. Thêm dị ứng
+**Endpoint:** `POST /api/users/add-allergy`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "ingredient_key": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "ingredient_key": "string",
+    "message": "Allergy added successfully"
+  }
+}
+```
+
+---
+
+### 2.5. Xóa dị ứng
+**Endpoint:** `DELETE /api/users/delete-allergy`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "ingredient_key": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Allergy deleted successfully"
+  }
+}
+```
+
+---
+
+### 2.6. Lấy thông tin hồ sơ người dùng
+**Endpoint:** `POST /api/users/get-profile`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
@@ -346,27 +432,39 @@ http://localhost:3000/api
 }
 ```
 
+**Parameters:**
+- `uid`: ID của người dùng cần xem profile
+- `senderID`: ID của người đang xem (current user)
+
 **Response:**
 ```json
 {
-  "message": "Lấy thông tin hồ sơ thành công!",
-  "user": {
+  "success": true,
+  "data": {
     "uid": "string",
-    "fullName": "string",
+    "name": "string",
     "email": "string",
-    "avatarUrl": "string",
+    "avatar_url": "string",
     "bio": "string",
-    "postsCount": "number",
-    "followersCount": "number",
-    "followingCount": "number"
+    "role": "string",
+    "is_verified": "boolean",
+    "created_at": "datetime",
+    "stats": {
+      "posts_count": "number",
+      "followers_count": "number",
+      "following_count": "number"
+    },
+    "is_following": "boolean"
   }
 }
 ```
 
 ---
 
-### 2.5. Đánh dấu thông báo đã xem
-**Endpoint:** `POST /api/user/seen-notifications`
+### 2.7. Đánh dấu thông báo đã xem
+**Endpoint:** `POST /api/users/seen-notifications`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
@@ -379,14 +477,19 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Đánh dấu thông báo đã xem thành công!"
+  "success": true,
+  "data": {
+    "message": "Notification marked as seen"
+  }
 }
 ```
 
 ---
 
-### 2.6. Xóa tài khoản
-**Endpoint:** `POST /api/user/delete-account`
+### 2.8. Xóa tài khoản (Soft delete)
+**Endpoint:** `DELETE /api/users/delete-account`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
@@ -399,67 +502,210 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Xóa tài khoản thành công!"
+  "success": true,
+  "data": {
+    "message": "Account deleted successfully"
+  }
 }
 ```
 
+**Note:** 
+- Đây là soft delete, tài khoản sẽ được đánh dấu `is_deleted = true`
+- Dữ liệu vẫn được giữ lại trong database
+- Người dùng không thể đăng nhập lại sau khi xóa tài khoản
+- Token sẽ bị revoke
+
 ---
 
-### 2.7. Hiển thị sổ tay
-**Endpoint:** `POST /api/user/show-notebook`
+### 2.9. Đặt lại mật khẩu
+**Endpoint:** `POST /api/users/reset-password`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
 {
-  "uid": "string"
+  "uid": "string",
+  "newPassword": "string"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Lấy sổ tay thành công!",
-  "posts": [
-    {
-      "postId": "string",
-      "title": "string",
-      "thumbnail": "string",
-      "savedAt": "datetime"
-    }
-  ]
+  "success": true,
+  "data": {
+    "message": "Password reset successfully"
+  }
 }
 ```
 
+**Password Requirements:**
+- Minimum 8 characters
+- At least 1 uppercase letter
+- At least 1 lowercase letter
+- At least 1 number
+- Special characters recommended
+
 ---
 
-### 2.8. Xem danh sách kế hoạch bữa ăn
-**Endpoint:** `POST /api/user/overview-meal-plans`
+### 2.10. Đổi email
+**Endpoint:** `POST /api/users/change-email`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
 {
-  "uid": "string"
+  "uid": "string",
+  "newEmail": "string"
 }
 ```
 
 **Response:**
 ```json
 {
-  "message": "Lấy danh sách kế hoạch bữa ăn thành công!",
-  "mealPlans": [
-    {
-      "mealPlanId": "string",
-      "weekStartDate": "date",
-      "createdAt": "datetime"
-    }
-  ]
+  "success": true,
+  "data": {
+    "uid": "string",
+    "email": "string",
+    "message": "Email changed successfully"
+  }
+}
+```
+
+**Note:** 
+- Email mới phải chưa được sử dụng trong hệ thống
+- Email phải đúng định dạng (example@domain.com)
+
+---
+
+### 2.11. Đổi avatar
+**Endpoint:** `POST /api/users/change-avatar`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "avatarData": "base64_string",
+  "formatFile": "jpg | png | jpeg | webp"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Đổi avatar thành công!",
+  "data": {
+    "avatar_url": "string"
+  }
+}
+```
+
+**Supported Formats:**
+- `jpg`, `jpeg`
+- `png`
+- `webp`
+
+**File Size Limit:** 5MB
+
+**Note:**
+- Avatar được lưu trong thư mục: `uploads/:uid/avatar/`
+- Tên file tự động tạo với timestamp
+
+---
+
+### 2.12. Hiển thị sổ tay (Saved posts)
+**Endpoint:** `POST /api/users/show-notebook`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "limit": "number (optional, default: 20)",
+  "offset": "number (optional, default: 0)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "posts": [
+      {
+        "post_id": "string",
+        "title": "string",
+        "thumbnail": "string",
+        "author": {
+          "uid": "string",
+          "name": "string",
+          "avatar_url": "string"
+        },
+        "saved_at": "datetime",
+        "rating": "number",
+        "views_count": "number"
+      }
+    ],
+    "total": "number",
+    "limit": "number",
+    "offset": "number"
+  }
 }
 ```
 
 ---
 
-### 2.9. Xem chi tiết kế hoạch bữa ăn
-**Endpoint:** `POST /api/user/show-meal-plans`
+### 2.13. Xem danh sách kế hoạch bữa ăn (Overview)
+**Endpoint:** `POST /api/users/overview-meal-plans`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "limit": "number (optional, default: 20)",
+  "offset": "number (optional, default: 0)",
+  "activeOnly": "boolean (optional, default: false)"
+}
+```
+
+**Parameters:**
+- `activeOnly`: Nếu `true`, chỉ lấy các meal plan đang active
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "mealPlans": [
+      {
+        "meal_plan_id": "string",
+        "week_start_date": "date",
+        "is_active": "boolean",
+        "created_at": "datetime",
+        "total_meals": "number"
+      }
+    ],
+    "total": "number",
+    "limit": "number",
+    "offset": "number"
+  }
+}
+```
+
+---
+
+### 2.14. Xem chi tiết kế hoạch bữa ăn
+**Endpoint:** `POST /api/users/show-meal-plans`
+
+**Authentication:** Required
 
 **Request Body:**
 ```json
@@ -472,12 +718,168 @@ http://localhost:3000/api
 **Response:**
 ```json
 {
-  "message": "Lấy kế hoạch bữa ăn thành công!",
-  "mealPlan": {
-    "mealPlanId": "string",
-    "userId": "string",
-    "weekStartDate": "date",
-    "meals": []
+  "success": true,
+  "data": {
+    "meal_plan_id": "string",
+    "user_id": "string",
+    "week_start_date": "date",
+    "is_active": "boolean",
+    "created_at": "datetime",
+    "meals": [
+      {
+        "day": "monday | tuesday | wednesday | thursday | friday | saturday | sunday",
+        "meal_type": "breakfast | lunch | dinner | snack",
+        "recipe_id": "string",
+        "recipe_title": "string",
+        "recipe_thumbnail": "string",
+        "servings": "number"
+      }
+    ]
+  }
+}
+```
+
+---
+
+### 2.15. Follow người dùng
+**Endpoint:** `POST /api/users/follow`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "follower_id": "string",
+  "followee_id": "string"
+}
+```
+
+**Parameters:**
+- `follower_id`: ID của người theo dõi (current user)
+- `followee_id`: ID của người được theo dõi
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Followed user successfully",
+  "data": {
+    "follower_id": "string",
+    "followee_id": "string",
+    "followed_at": "datetime"
+  }
+}
+```
+
+**Note:** 
+- Không thể follow chính mình
+- Nếu đã follow trước đó, sẽ trả về lỗi
+
+---
+
+### 2.16. Unfollow người dùng
+**Endpoint:** `POST /api/users/unfollow`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "follower_id": "string",
+  "followee_id": "string"
+}
+```
+
+**Parameters:**
+- `follower_id`: ID của người theo dõi (current user)
+- `followee_id`: ID của người muốn unfollow
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Unfollowed user successfully",
+  "data": {
+    "follower_id": "string",
+    "followee_id": "string"
+  }
+}
+```
+
+---
+
+### 2.17. Lấy danh sách người theo dõi (Followers)
+**Endpoint:** `POST /api/users/list-followers`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "limit": "number (optional, default: 20)",
+  "offset": "number (optional, default: 0)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "followers": [
+      {
+        "uid": "string",
+        "name": "string",
+        "avatar_url": "string",
+        "bio": "string",
+        "is_verified": "boolean",
+        "followed_at": "datetime",
+        "is_following_back": "boolean"
+      }
+    ],
+    "total": "number",
+    "limit": "number",
+    "offset": "number"
+  }
+}
+```
+
+---
+
+### 2.18. Lấy danh sách đang theo dõi (Following)
+**Endpoint:** `POST /api/users/list-following`
+
+**Authentication:** Required
+
+**Request Body:**
+```json
+{
+  "uid": "string",
+  "limit": "number (optional, default: 20)",
+  "offset": "number (optional, default: 0)"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "following": [
+      {
+        "uid": "string",
+        "name": "string",
+        "avatar_url": "string",
+        "bio": "string",
+        "is_verified": "boolean",
+        "followed_at": "datetime",
+        "is_following_back": "boolean"
+      }
+    ],
+    "total": "number",
+    "limit": "number",
+    "offset": "number"
   }
 }
 ```
