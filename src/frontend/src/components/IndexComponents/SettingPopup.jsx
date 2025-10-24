@@ -2,21 +2,21 @@ import React from "react";
 import { Moon, Globe } from "lucide-react";
 import Popup from "../Popup";
 import Label from "../Label";
+import Button from "../Button";
 import { usersApi } from "../../api/users";
 import useUser from "../../hooks/useUser";
 
 export default function SettingPopup({ isOpen, onClose, size }) {
     const { theme, language, updateTheme, updateLanguage } = useUser();
+    // console.log("theme:", theme, " - lang: ", language);
 
-    // ======== ĐỔI THEME ========
     const handleThemeChange = async (e) => {
         const newTheme = e.target.value;
-
+        // console.log('New theme: ', newTheme)
         try {
         await usersApi.changeTheme(newTheme);
         updateTheme(newTheme);
 
-        // Áp dụng theme vào document
         if (newTheme === "dark") {
             document.documentElement.classList.add("dark");
         } else if (newTheme === "light") {
@@ -32,7 +32,7 @@ export default function SettingPopup({ isOpen, onClose, size }) {
 
     const handleLanguageChange = async (e) => {
         const newLang = e.target.value;
-
+        // console.log('New lang: ', newLang)
         try {
         await usersApi.changeLanguage(newLang);
         updateLanguage(newLang);
@@ -45,7 +45,7 @@ export default function SettingPopup({ isOpen, onClose, size }) {
 
     return (
         <Popup isOpen={isOpen} onClose={onClose} title="Cài đặt" size={size}>
-            <div className="border-b pb-4 mb-4">
+            <div className="border-b px-5 pt-4 pb-4 mb-4">
                 <div className="flex items-center mb-2">
                 <Moon className="w-5 h-5 mr-2" />
                 <h2 className="text-lg font-semibold">Chế độ tối</h2>
@@ -75,14 +75,11 @@ export default function SettingPopup({ isOpen, onClose, size }) {
                 </div>
             </div>
 
-            <div>
+            <div className="px-5 pt-4 pb-4 border-b">
                 <div className="flex items-center mb-2">
                 <Globe className="w-5 h-5 mr-2" />
                 <h2 className="text-lg font-semibold">Ngôn ngữ</h2>
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-3">
-                Chọn ngôn ngữ hiển thị cho ứng dụng.
-                </p>
 
                 <div className="space-y-2">
                 {[
@@ -105,6 +102,16 @@ export default function SettingPopup({ isOpen, onClose, size }) {
                     </label>
                 ))}
                 </div>
+            </div>
+
+            <div className="">
+                <Button name="Change Password" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
+            </div>
+            <div className="">
+                <Button name="Lock Account" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
+            </div>
+            <div className="">
+                <Button name="Delete Account" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
             </div>
         </Popup>
     );
