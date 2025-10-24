@@ -26,6 +26,7 @@ model User {
   count_finished_recipes  Int       @default(0)
   count_posts             Int       @default(0)
   count_followers         Int       @default(0)
+  count_following         Int       @default(0)
   role                    Role      @default(USER)
   is_verified             Boolean   @default(false)
   is_disabled             Boolean   @default(false)

@@ -1,6 +1,6 @@
 
 module.exports = new PostTagRepository();
-const prisma = require('../../config/prisma');
+const prisma = require('../../../config/prisma');
 
 /**
  * Post Tag Repository

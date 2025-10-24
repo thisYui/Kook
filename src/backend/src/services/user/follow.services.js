@@ -1,5 +1,5 @@
-const followRepository = require('../../db/repositories/follow.repository');
-const userRepository = require('../../db/repositories/user.repository.prisma');
+const followRepository = require('../../db/repositories/postgres/follow.repository');
+const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 

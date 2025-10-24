@@ -7,6 +7,8 @@ const connectMongo = require('../../config/mongo');
 const { seedUsers } = require('./user.seed');
 const { seedFollows } = require('./follow.seed');
 const { seedPosts } = require('./posts.seed');
+const { seedUserAllergies } = require('./userAllergies.seed');
+const { seedMealPlans } = require('./mealPlan.seed');
 
 const prisma = new PrismaClient();
 
@@ -47,6 +49,16 @@ async function runAllSeeds() {
         // 3. Seed Posts (includes recipes, ingredients, MongoDB details)
         console.log('📝 Step 3: Seeding Posts and Recipes...');
         await seedPosts();
+        console.log('');
+
+        // 4. Seed User Allergies
+        console.log('🚨 Step 4: Seeding User Allergies...');
+        await seedUserAllergies();
+        console.log('');
+
+        // 5. Seed Meal Plans
+        console.log('🗓️  Step 5: Seeding Meal Plans...');
+        await seedMealPlans();
         console.log('');
 
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');

@@ -15,6 +15,10 @@ async function changeLanguage(req, res) {
     const { uid, language } = req.body;
 
     try {
+        if (!uid || !language) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and language are required');
+        }
+
         const result = await userService.changeLanguage(uid, language);
 
         res.status(200).json({
@@ -36,6 +40,10 @@ async function changeTheme(req, res) {
     const { uid, theme } = req.body;
 
     try {
+        if (!uid || !theme) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and theme are required');
+        }
+
         const result = await userService.changeTheme(uid, theme);
 
         res.status(200).json({
@@ -57,6 +65,10 @@ async function getUserAllergies(req, res) {
     const { uid } = req.body;
 
     try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
         const result = await userAllergyService.getUserAllergies(uid);
 
         res.status(200).json({
@@ -78,6 +90,10 @@ async function addAllergy(req, res) {
     const { uid, ingredient_key } = req.body;
 
     try {
+        if (!uid || !ingredient_key) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and ingredient_key are required');
+        }
+
         const result = await userAllergyService.addAllergy(uid, ingredient_key);
 
         res.status(200).json({
@@ -99,6 +115,10 @@ async function deleteAllergy(req, res) {
     const { uid, ingredient_key } = req.body;
 
     try {
+        if (!uid || !ingredient_key) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and ingredient_key are required');
+        }
+
         const result = await userAllergyService.deleteAllergy(uid, ingredient_key);
 
         res.status(200).json({
@@ -116,6 +136,10 @@ async function getUserProfile(req, res) {
     const { uid, senderID } = req.body;
 
     try {
+        if (!uid || !senderID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
         // TODO: Validate input
         // TODO: Get user profile from database
         // TODO: Check privacy settings
@@ -137,6 +161,10 @@ async function markNotificationsSeen(req, res) {
     const { uid, notificationID } = req.body;
 
     try {
+        if (!uid || !notificationID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and notificationID are required');
+        }
+
         const result = await notificationService.markNotificationsSeen(uid, notificationID);
 
         res.status(200).json({
@@ -158,6 +186,10 @@ async function deleteUserAccount(req, res) {
     const { uid, token } = req.body;
 
     try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and token are required');
+        }
+
         const result = await userService.deleteUserAccount(uid, token);
 
         res.status(200).json({
@@ -179,6 +211,10 @@ async function resetPassword(req, res) {
     const { uid, newPassword } = req.body;
 
     try {
+        if (!uid || !newPassword) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and newPassword are required');
+        }
+
         const result = await userService.resetPassword(uid, newPassword);
 
         res.status(200).json({
@@ -200,6 +236,10 @@ async function changeEmail(req, res) {
     const { uid, newEmail } = req.body;
 
     try {
+        if (!uid || !newEmail) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and newEmail are required');
+        }
+
         const result = await userService.changeEmail(uid, newEmail);
 
         res.status(200).json({
@@ -221,6 +261,10 @@ async function changeAvatar(req, res) {
     const { uid, avatarData, formatFile } = req.body;
 
     try {
+        if (!uid || !avatarData || !formatFile) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid), avatarData, and formatFile are required');
+        }
+
         const result = await userService.changeAvatar(uid, avatarData, formatFile);
 
         res.status(200).json({

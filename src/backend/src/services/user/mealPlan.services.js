@@ -1,5 +1,6 @@
-const mealPlanRepository = require('../../db/repositories/mealPlan.repository');
-const userRepository = require('../../db/repositories/user.repository.prisma');
+const mealPlanRepository = require('../../db/repositories/postgres/mealPlan.repository');
+const mealPlanMongoRepository = require('../../db/repositories/mongo/mealPlan.repositories');
+const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 
@@ -83,16 +84,26 @@ class MealPlanService {
                 throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Meal plan ID is required');
             }
 
-            // 3. Get meal plan by ID
+            // 3. Get meal plan metadata from PostgreSQL
             const mealPlan = await mealPlanRepository.getMealPlanById(mealPlanID, uid);
 
             if (!mealPlan) {
                 throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Meal plan not found or does not belong to user');
             }
 
-            // 4. TODO: Get meal plan details from MongoDB
-            // This would include the actual meal data stored in MongoDB
-            // For now, return metadata from PostgreSQL
+            // 4. Get meal plan details from MongoDB
+            const mealPlanDetails = await mealPlanMongoRepository.getMealPlanDetailsByUser(mealPlanID, uid);
+
+            // Format meal details
+            let mealsData = null;
+            if (mealPlanDetails) {
+                const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                mealsData = {};
+
+                days.forEach(day => {
+                    mealsData[day] = mealPlanDetails.meals[day] || [];
+                });
+            }
 
             logger.info(`Meal plan ${mealPlanID} retrieved for user ${uid}`);
 
@@ -109,8 +120,8 @@ class MealPlanService {
                     created_at: mealPlan.created_at,
                     updated_at: mealPlan.updated_at,
                 },
-                // TODO: Add meal details from MongoDB
-                meals: [], // Placeholder for MongoDB data
+                meals: mealsData,
+                week_start: mealPlanDetails ? mealPlanDetails.week_start : null,
             };
 
         } catch (error) {
@@ -236,4 +247,3 @@ class MealPlanService {
 }
 
 module.exports = new MealPlanService();
-

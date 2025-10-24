@@ -2,7 +2,7 @@ const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
 const authService = require('../services/auth/auth.services');
 const otpService = require('../services/auth/otp.services');
-const userRepository = require('../db/repositories/user.repository.prisma');
+const userRepository = require('../db/repositories/postgres/user.repository.prisma');
 const jwtTokenService = require('../services/auth/jwtToken.service');
 const { JWT_ACCESS_TOKEN_EXPIRE_SECONDS } = require('../constants');
 

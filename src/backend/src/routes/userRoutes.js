@@ -32,17 +32,17 @@ router.post("/change-avatar", authenticateToken, changeAvatar);
 router.delete("/delete-account", authenticateToken, deleteUserAccount);
 
 // User data
-router.post("/allergies", getUserAllergies);
-router.post("/add-allergy", addAllergy);
-router.post("/get-profile", getUserProfile);
-router.post("/seen-notifications", markNotificationsSeen);
-router.post("/show-notebook", showUserNotebook);
-router.post("/overview-meal-plans", overviewUserMealPlans);
-router.post("/show-meal-plans", showUserMealPlans);
-router.post("/follow", followUser);
-router.post("unfollow", unfollowUser);
-router.post("/list-following", getFollowing);
-router.post("/list-followers", getFollowers);
-router.delete("/delete-allergy", deleteAllergy);
+router.post("/allergies", authenticateToken, getUserAllergies);
+router.post("/add-allergy", authenticateToken, addAllergy);
+router.post("/get-profile", getUserProfile); // Chưa test
+router.post("/seen-notifications", authenticateToken, markNotificationsSeen);
+router.post("/show-notebook", authenticateToken, showUserNotebook);
+router.post("/overview-meal-plans", authenticateToken, overviewUserMealPlans);
+router.post("/show-meal-plans", authenticateToken, showUserMealPlans);
+router.post("/follow", authenticateToken, followUser);
+router.post("unfollow", authenticateToken, unfollowUser);
+router.post("/list-following", authenticateToken, getFollowing);
+router.post("/list-followers", authenticateToken, getFollowers);
+router.delete("/delete-allergy", authenticateToken, deleteAllergy);
 
 module.exports = router;

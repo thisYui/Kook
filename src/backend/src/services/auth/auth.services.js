@@ -1,5 +1,5 @@
 const bcrypt = require('bcryptjs');
-const userRepository = require('../../db/repositories/user.repository.prisma');
+const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const jwtTokenService = require('./jwtToken.service');
 const { ErrorCodes } = require('../../utils/errorHandler');
 const { AppError } = require('../../utils/errorHandler');

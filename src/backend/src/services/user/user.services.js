@@ -1,4 +1,4 @@
-const userRepository = require('../../db/repositories/user.repository.prisma');
+const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 const { SUPPORTED_LANGUAGES, SUPPORTED_THEMES } = require('../../constants');

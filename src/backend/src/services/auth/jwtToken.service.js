@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const jwtTokenRepository = require('../../db/repositories/jwtToken.repository');
+const jwtTokenRepository = require('../../db/repositories/postgres/jwtToken.repository');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 const {

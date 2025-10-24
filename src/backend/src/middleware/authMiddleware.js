@@ -1,5 +1,5 @@
 const jwtTokenService = require('../services/auth/jwtToken.service');
-const userRepository = require('../db/repositories/user.repository.prisma');
+const userRepository = require('../db/repositories/postgres/user.repository.prisma');
 const { AppError, ErrorCodes, ErrorResponse } = require('../utils/errorHandler');
 const logger = require('../utils/logger');
 

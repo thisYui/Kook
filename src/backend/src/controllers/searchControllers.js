@@ -1,5 +1,7 @@
 const logger = require('../utils/logger');
 
+const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
+
 /**
  * Có thể tìm theo id nguyên liệu hoặc tên nguyên liệu
  * Một trong 2 trường ingredientID hoặc text phải được cung cấp và trường còn lại có thể để trống
@@ -11,7 +13,9 @@ async function searchByIngredient(req, res) {
     const { ingredientID, text } = req.body;
 
     try {
-        // TODO: Validate input
+        if (!ingredientID && !text) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, "Have to provide either ingredientID or text for search.");
+        }
         // TODO: Search recipes by ingredients in MongoDB
         // TODO: Filter out recipes with excluded ingredients
         // TODO: Apply pagination
@@ -29,7 +33,9 @@ async function searchByUserName(req, res) {
     const { username } = req.body;
 
     try {
-        // TODO: Validate input
+        if (!username) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, "Have to provide username for search.");
+        }
         // TODO: Search users by username
         // TODO: Apply pagination
         // TODO: Return matching users with basic info
@@ -46,7 +52,9 @@ async function searchByTitle(req, res) {
     const { title } = req.body;
 
     try {
-        // TODO: Validate input
+        if (!title) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, "Have to provide title for search.");
+        }
         // TODO: Search posts by title
         // TODO: Apply pagination
         // TODO: Return matching posts
