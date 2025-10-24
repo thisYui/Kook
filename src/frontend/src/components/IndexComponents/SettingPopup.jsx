@@ -8,12 +8,12 @@ import useUser from "../../hooks/useUser";
 
 export default function SettingPopup({ isOpen, onClose, size }) {
     const { theme, language, updateTheme, updateLanguage } = useUser();
-    // console.log("theme:", theme, " - lang: ", language);
 
     const handleThemeChange = async (e) => {
         const newTheme = e.target.value;
-        // console.log('New theme: ', newTheme)
+        console.log('New theme: ', newTheme)
         try {
+
         await usersApi.changeTheme(newTheme);
         updateTheme(newTheme);
 
@@ -32,7 +32,7 @@ export default function SettingPopup({ isOpen, onClose, size }) {
 
     const handleLanguageChange = async (e) => {
         const newLang = e.target.value;
-        // console.log('New lang: ', newLang)
+        console.log('New lang: ', newLang)
         try {
         await usersApi.changeLanguage(newLang);
         updateLanguage(newLang);
