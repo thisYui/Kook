@@ -6,11 +6,19 @@ import Button from './Button';
 import { AuthorAvatar } from './AuthorInfo';
 import { Menu, X } from 'lucide-react';
 
+
+import SettingPopup from './IndexComponents/SettingPopup';
+
+
 const NavigationBar = () => {
   const { logout } = useAuth();
   const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+
+  //Test setting popup
+  const [isSettingOpen, setIsSettingOpen] = useState(false);
 
   return (
     <nav className="bg-white shadow-sm w-full">
@@ -83,13 +91,11 @@ const NavigationBar = () => {
                   <div 
                     className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
                   >
-                    <Link 
-                      to="/settings" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      Settings
-                    </Link>
+                    <Button 
+                      name="Setting"
+                      className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                      onClick={() => setIsSettingOpen(true)}
+                    />
                     <Link 
                       to="/notebook" 
                       className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -131,7 +137,7 @@ const NavigationBar = () => {
             )}
           </div>
         </div>
-
+        
         {/* Mobile Navigation Dropdown */}
         {isMenuOpen && (
           <div className="lg:hidden absolute left-0 right-0 top-16 bg-white shadow-lg z-30 border-t">
@@ -174,6 +180,11 @@ const NavigationBar = () => {
             </div>
           </div>
         )}
+        <SettingPopup
+          isOpen={isSettingOpen}
+          onClose={() => setIsSettingOpen(false)}
+          size="sm"
+        />
       </div>
     </nav>
   );
