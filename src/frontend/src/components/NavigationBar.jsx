@@ -5,12 +5,15 @@ import { useUser } from '../hooks/useUser';
 import Button from './Button';
 import { AuthorAvatar } from './AuthorInfo';
 import { Menu, X } from 'lucide-react';
-
-
+import i18n from '../i18n';
+import { useTranslation } from 'react-i18next';
 import SettingPopup from './IndexComponents/SettingPopup';
 
 
 const NavigationBar = () => {
+
+  const { t }= useTranslation();
+
   const { logout } = useAuth();
   const { user } = useUser();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -46,20 +49,23 @@ const NavigationBar = () => {
           {/* Navigation Links */}
           <div className="hidden lg:flex space-x-8 absolute left-1/2 transform -translate-x-1/2 z-20">
             <Link to="/" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              Home
+              {t("navigation.home")}
             </Link>
             <Link to="/search" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              Recipes
+              {t("navigation.search")}
             </Link>
-            <a href="#blog" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              Blog
-            </a>
-            <a href="/showcase" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              Show Case
-            </a>
-            <a href="#about" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
-              About us
-            </a>
+            <Link to="/post" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
+              {t("navigation.newFeed")}
+            </Link>
+            <Link to="/question" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
+              {t("navigation.question")}
+            </Link>
+            <Link to="/ai" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
+              {t("navigation.aiAssistant")}
+            </Link>
+            <Link to="/profile" className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap">
+              {t("navigation.profile")}
+            </Link>
           </div>
 
           {/* Auth Section */}
@@ -92,17 +98,10 @@ const NavigationBar = () => {
                     className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
                   >
                     <Button 
-                      name="Setting"
+                      name={t("navigation.dropdown.setting")}
                       className="w-full text-left block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                       onClick={() => setIsSettingOpen(true)}
                     />
-                    <Link 
-                      to="/notebook" 
-                      className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      onClick={() => setIsDropdownOpen(false)}
-                    >
-                      My Recipes
-                    </Link>
                     <hr className="my-1" />
                     <button
                       onClick={() => {
@@ -112,7 +111,7 @@ const NavigationBar = () => {
                       type="button"
                       className="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
                     >
-                      Sign out
+                      {t("navigation.dropdown.signout")}
                     </button>
                   </div>
                 )}
@@ -124,11 +123,11 @@ const NavigationBar = () => {
                   to="/login" 
                   className="text-gray-900 hover:text-gray-600 font-medium whitespace-nowrap"
                 >
-                  Sign in
+                  {t("navigation.signin")}
                 </Link>
                 <Link to="/signup">
                   <Button
-                    name="Get Started"
+                    name={t("navigation.getStarted")}
                     type="button"
                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 rounded-lg transition-colors whitespace-nowrap"
                   />
@@ -147,35 +146,35 @@ const NavigationBar = () => {
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Home
+                {t("navigation.home")}
               </Link>
               <Link
                 to="/search"
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Recipes
+                {t("navigation.newFeed")}
               </Link>
               <a
                 href="#blog"
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Blog
+                {t("navigation.question")}
               </a>
               <a
-                href="/showcase"
+                to="/ai"
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                Show Case
+                {t("navigation.aiAssistant")}
               </a>
               <a
                 href="#about"
                 className="block px-4 py-3 text-gray-900 hover:bg-gray-100 rounded-md font-medium"
                 onClick={() => setIsMenuOpen(false)}
               >
-                About us
+                {t("navigation.profile")}
               </a>
             </div>
           </div>

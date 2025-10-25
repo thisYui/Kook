@@ -1,118 +1,137 @@
-import React from "react";
+import React, { useState } from "react";
 import { Moon, Globe } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import Popup from "../Popup";
 import Label from "../Label";
 import Button from "../Button";
 import { usersApi } from "../../api/users";
 import useUser from "../../hooks/useUser";
+import Accordion from "../Accordion";
+
+import ChangePasswordPopup from "./ChangePasswordPopup";
 
 export default function SettingPopup({ isOpen, onClose, size }) {
+
+    const { t } = useTranslation();
     const { theme, language, updateTheme, updateLanguage } = useUser();
+
+    const [showPasswordPopup, setShowPasswordPopup] = useState(false);
 
     const handleThemeChange = async (e) => {
         const newTheme = e.target.value;
-        console.log('New theme: ', newTheme)
         try {
-
-        await usersApi.changeTheme(newTheme);
-        updateTheme(newTheme);
-
-        if (newTheme === "dark") {
-            document.documentElement.classList.add("dark");
-        } else if (newTheme === "light") {
-            document.documentElement.classList.remove("dark");
-        } else {
-            const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-            document.documentElement.classList.toggle("dark", prefersDark);
-        }
+            // Call API to persist the change
+            await usersApi.changeTheme(newTheme);
+            
+            // Update local state via hook
+            updateTheme(newTheme);
+            
+            // Apply the theme change immediately to UI
+            const { applyTheme } = await import('../../utils/settingUtils');
+            applyTheme(newTheme);
         } catch (error) {
-        console.error("Lỗi khi đổi theme:", error);
+            console.error("Error changing theme:", error);
         }
     };
 
     const handleLanguageChange = async (e) => {
         const newLang = e.target.value;
-        console.log('New lang: ', newLang)
         try {
-        await usersApi.changeLanguage(newLang);
-        updateLanguage(newLang);
-
-        console.log(`Đã đổi ngôn ngữ sang ${newLang}`);
+            // Call API to persist the change
+            await usersApi.changeLanguage(newLang);
+            
+            // Update local state via hook
+            updateLanguage(newLang);
+            
+            // Apply the language change immediately to UI
+            const { applyLanguage } = await import('../../utils/settingUtils');
+            applyLanguage(newLang);
         } catch (error) {
-        console.error("Lỗi khi đổi ngôn ngữ:", error);
+            console.error("Error changing language:", error);
         }
     };
 
+    const handlePasswordChange = async (newPassword) => {
+        try {
+            await usersApi.resetPassword(newPassword);
+            console.log("Change Password successfully!");
+        } catch (error) {
+            console.error("Error changing password: ", error);
+        }
+    }
+
     return (
-        <Popup isOpen={isOpen} onClose={onClose} title="Cài đặt" size={size}>
-            <div className="border-b px-5 pt-4 pb-4 mb-4">
-                <div className="flex items-center mb-2">
-                <Moon className="w-5 h-5 mr-2" />
-                <h2 className="text-lg font-semibold">Chế độ tối</h2>
+        <Popup isOpen={isOpen} onClose={onClose} title={t('settings.title')} size={size}>
+            {/* --- Theme --- */}
+            <Accordion header={
+                <div className="flex flex-row gap-4">
+                    <Moon /> {t('settings.theme.title')}
                 </div>
+            }>
+            {[
+                { value: "light", translationKey: "theme.light" },
+                { value: "dark", translationKey: "theme.dark" },
+                { value: "system", translationKey: "theme.system" }
+            ].map((item) => (
+                <label key={item.value} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition">
+                <span>{t(`settings.${item.translationKey}`)}</span>
+                <Label
+                    type="radio"
+                    name="theme"
+                    value={item.value}
+                    onChange={handleThemeChange}
+                    checked={theme === item.value}
+                    className="m-0"
+                />
+                </label>
+            ))}
+            </Accordion>
 
-                <div className="space-y-2">
-                {[
-                    { value: "light", label: "Tắt" },
-                    { value: "dark", label: "Bật" },
-                    { value: "auto", label: "Tự động" }
-                ].map((item) => (
-                    <label
-                    key={item.value}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition"
-                    >
-                    <span>{item.label}</span>
-                    <Label
-                        type="radio"
-                        name="theme"
-                        value={item.value}
-                        onChange={handleThemeChange}
-                        checked={theme === item.value}
-                        className="m-0"
-                    />
-                    </label>
-                ))}
+            {/* --- Language --- */}
+            <Accordion header={
+                <div className="flex flex-row gap-4">
+                    <Globe /> {t('settings.language.title')}
                 </div>
-            </div>
-
-            <div className="px-5 pt-4 pb-4 border-b">
-                <div className="flex items-center mb-2">
-                <Globe className="w-5 h-5 mr-2" />
-                <h2 className="text-lg font-semibold">Ngôn ngữ</h2>
-                </div>
-
-                <div className="space-y-2">
-                {[
-                    { value: "vi", label: "Tiếng Việt" },
-                    { value: "en", label: "English" },
-                ].map((item) => (
-                    <label
-                    key={item.value}
-                    className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition"
-                    >
-                    <span>{item.label}</span>
-                    <Label
-                        type="radio"
-                        name="language"
-                        value={item.value}
-                        onChange={handleLanguageChange}
-                        checked={language === item.value}
-                        className="m-0"
-                    />
-                    </label>
-                ))}
-                </div>
-            </div>
+            }>
+            {[
+                { value: "vi", translationKey: "language.vi" },
+                { value: "en", translationKey: "language.en" },
+            ].map((item) => (
+                <label key={item.value} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer transition">
+                <span>{t(`settings.${item.translationKey}`)}</span>
+                <Label
+                    type="radio"
+                    name="language"
+                    value={item.value}
+                    onChange={handleLanguageChange}
+                    checked={language === item.value}
+                    className=""
+                />
+                </label>
+            ))}
+        </Accordion>
 
             <div className="">
-                <Button name="Change Password" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
+                <Button
+                name={t('settings.account.changePassword')}
+                className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"
+                onClick={() => setShowPasswordPopup(true)}
+                ></Button>
             </div>
             <div className="">
-                <Button name="Lock Account" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
+                <Button
+                name={t('settings.account.lockAccount')}
+                className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"
+                ></Button>
             </div>
             <div className="">
-                <Button name="Delete Account" className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"></Button>
+                <Button
+                name={t('settings.account.deleteAccount')}
+                className="border-t border-b w-full p-4 hover:bg-gray-100 dark:hover:bg-gray-800"
+                ></Button>
             </div>
+            <ChangePasswordPopup isOpen={showPasswordPopup} onClose={() => setShowPasswordPopup(false)} onSubmit={handlePasswordChange}/>
         </Popup>
+        
     );
 }

@@ -11,7 +11,7 @@ import FullPageLayout from './layouts/FullPageLayout';
 import LoginPage from './pages/LoginPage';
 import SignupPage from './pages/SignupPage';
 import ConfirmOTPPage from './pages/ConfirmOTPPage';
-import SettingPage from './pages/SettingPage';
+import ProfilePage from './pages/ProfilePage.jsx';
 import CreatePostPage from './pages/CreatePostPage';
 import PostPage from './pages/PostPage';
 import RepostPage from './pages/RepostPage';
@@ -29,9 +29,30 @@ import { ProtectedRoute, PublicOnlyRoute } from './components/ProtectedRoute';
 import authService from './services/authService.js';
 
 function App() {
-  // Initialize auth service when app loads
+  // Initialize auth service when app loads and apply saved settings (theme / language)
   useEffect(() => {
-    authService.initialize();
+    let cleanup = null;
+
+    (async () => {
+      try {
+        await authService.initialize();
+      } catch (err) {
+        // ignore init errors here
+      }
+
+      // Apply saved theme and language after authService is initialized
+      try {
+        const { default: loadAndApplySettings } = await import('./utils/settingUtils');
+        cleanup = loadAndApplySettings();
+      } catch (e) {
+        // ignore if dynamic import fails (e.g., non-browser environment)
+        console.error('Failed to apply settings:', e);
+      }
+    })();
+
+    return () => {
+      if (typeof cleanup === 'function') cleanup();
+    };
   }, []);
 
   return (
@@ -57,7 +78,7 @@ function App() {
             <MainLayout />
           </ProtectedRoute>
         }>
-          <Route path="/settings" element={<SettingPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
           <Route path="/post" element={<CreatePostPage />} />
           <Route path="/post/:id" element={<PostPage />} />
           <Route path="/repost/:id" element={<RepostPage />} />
