@@ -250,7 +250,7 @@ async function seedUsers() {
     try {
         // Check if users already exist
         const existingUsers = await prisma.user.count();
-        if (existingUsers > 0) {
+        if (existingUsers > 5) {
             console.log(`⚠Database already has ${existingUsers} users. Skipping seed.`);
             console.log('To re-seed, please clear the User table first.');
             return;

@@ -22,6 +22,7 @@ const ingredientCatalog = [
     { ingredient_key: 'ginger', display_name: 'Gừng', category: 'VEGETABLES' },
     { ingredient_key: 'lemongrass', display_name: 'Sả', category: 'VEGETABLES' },
     { ingredient_key: 'scallion', display_name: 'Hành lá', category: 'VEGETABLES' },
+    { ingredient_key: 'green_onion', display_name: 'Hành lá', category: 'VEGETABLES' },
     { ingredient_key: 'cilantro', display_name: 'Rau mùi', category: 'VEGETABLES' },
     { ingredient_key: 'basil', display_name: 'Húng quế', category: 'VEGETABLES' },
     { ingredient_key: 'mint', display_name: 'Rau húng', category: 'VEGETABLES' },
@@ -46,6 +47,7 @@ const ingredientCatalog = [
     { ingredient_key: 'kale', display_name: 'Cải xoăn', category: 'VEGETABLES' },
     { ingredient_key: 'leek', display_name: 'Tỏi tây', category: 'VEGETABLES' },
     { ingredient_key: 'shallot', display_name: 'Hành tím', category: 'VEGETABLES' },
+    { ingredient_key: 'pearl_onion', display_name: 'Hành tây bi', category: 'VEGETABLES' },
     { ingredient_key: 'parsley', display_name: 'Rau mùi tây', category: 'VEGETABLES' },
     { ingredient_key: 'dill', display_name: 'Rau thì là', category: 'VEGETABLES' },
     { ingredient_key: 'radish', display_name: 'Củ cải', category: 'VEGETABLES' },
@@ -105,6 +107,8 @@ const ingredientCatalog = [
     { ingredient_key: 'parmesan_cheese', display_name: 'Phô mai Parmesan', category: 'DAIRY_EGGS' },
     { ingredient_key: 'cream_cheese', display_name: 'Phô mai kem', category: 'DAIRY_EGGS' },
     { ingredient_key: 'egg', display_name: 'Trứng gà', category: 'DAIRY_EGGS' },
+    { ingredient_key: 'egg_yolk', display_name: 'Lòng đỏ trứng', category: 'DAIRY_EGGS' },
+    { ingredient_key: 'egg_white', display_name: 'Lòng trắng trứng', category: 'DAIRY_EGGS' },
     { ingredient_key: 'duck_egg', display_name: 'Trứng vịt', category: 'DAIRY_EGGS' },
     { ingredient_key: 'quail_egg', display_name: 'Trứng cút', category: 'DAIRY_EGGS' },
 
@@ -114,10 +118,12 @@ const ingredientCatalog = [
     { ingredient_key: 'sticky_rice', display_name: 'Gạo nếp', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'brown_rice', display_name: 'Gạo lứt', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'wheat_flour', display_name: 'Bột mì', category: 'GRAINS_LEGUMES' },
+    { ingredient_key: 'flour', display_name: 'Bột mì đa dụng', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'bread_flour', display_name: 'Bột mì làm bánh mì', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'cake_flour', display_name: 'Bột mì làm bánh', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'rice_flour', display_name: 'Bột gạo', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'tapioca_starch', display_name: 'Bột năng', category: 'GRAINS_LEGUMES' },
+    { ingredient_key: 'potato_starch', display_name: 'Bột khoai tây', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'cornstarch', display_name: 'Bột ngô', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'pasta', display_name: 'Mì Ý', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'spaghetti', display_name: 'Spaghetti', category: 'GRAINS_LEGUMES' },
@@ -126,6 +132,9 @@ const ingredientCatalog = [
     { ingredient_key: 'vermicelli', display_name: 'Bún', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'glass_noodles', display_name: 'Miến', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'instant_noodles', display_name: 'Mì gói', category: 'GRAINS_LEGUMES' },
+    { ingredient_key: 'wonton_wrapper', display_name: 'Vỏ hoành thánh', category: 'GRAINS_LEGUMES' },
+    { ingredient_key: 'dumpling_wrapper', display_name: 'Vỏ há cảo', category: 'GRAINS_LEGUMES' },
+    { ingredient_key: 'spring_roll_wrapper', display_name: 'Bánh tráng nem', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'oats', display_name: 'Yến mạch', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'quinoa', display_name: 'Quinoa', category: 'GRAINS_LEGUMES' },
     { ingredient_key: 'bread', display_name: 'Bánh mì', category: 'GRAINS_LEGUMES' },
@@ -216,7 +225,11 @@ const ingredientCatalog = [
     { ingredient_key: 'oregano', display_name: 'Lá oregano', category: 'SPICES_HERBS' },
     { ingredient_key: 'sage', display_name: 'Xô thơm', category: 'SPICES_HERBS' },
     { ingredient_key: 'vanilla_extract', display_name: 'Tinh chất vani', category: 'SPICES_HERBS' },
+    { ingredient_key: 'vanilla_bean', display_name: 'Quả vani', category: 'SPICES_HERBS' },
     { ingredient_key: 'almond_extract', display_name: 'Tinh chất hạnh nhân', category: 'SPICES_HERBS' },
+    { ingredient_key: 'gochujang', display_name: 'Tương ớt Hàn Quốc', category: 'SPICES_HERBS' },
+    { ingredient_key: 'gochugaru', display_name: 'Ớt bột Hàn Quốc', category: 'SPICES_HERBS' },
+    { ingredient_key: 'miso_paste', display_name: 'Tương miso', category: 'SPICES_HERBS' },
 
     // ===== NUTS & SEEDS (Các loại hạt) =====
     { ingredient_key: 'almonds', display_name: 'Hạnh nhân', category: 'NUTS_SEEDS' },
@@ -228,6 +241,7 @@ const ingredientCatalog = [
     { ingredient_key: 'pecans', display_name: 'Hạt pecan', category: 'NUTS_SEEDS' },
     { ingredient_key: 'pine_nuts', display_name: 'Hạt thông', category: 'NUTS_SEEDS' },
     { ingredient_key: 'sesame_seeds', display_name: 'Hạt mè', category: 'NUTS_SEEDS' },
+    { ingredient_key: 'sesame_seed', display_name: 'Hạt mè', category: 'NUTS_SEEDS' },
     { ingredient_key: 'sunflower_seeds', display_name: 'Hạt hướng dương', category: 'NUTS_SEEDS' },
     { ingredient_key: 'pumpkin_seeds', display_name: 'Hạt bí', category: 'NUTS_SEEDS' },
     { ingredient_key: 'chia_seeds', display_name: 'Hạt chia', category: 'NUTS_SEEDS' },
@@ -357,4 +371,3 @@ if (require.main === module) {
 }
 
 module.exports = { seedIngredientCatalog, ingredientCatalog };
-

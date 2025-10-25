@@ -1,5 +1,5 @@
-const RecipeDetail = require('../../models/mongo/RecipeDetail');
-const logger = require('../../utils/logger');
+const RecipeDetail = require('../../../models/mongo/RecipeDetail');
+const logger = require('../../../utils/logger');
 
 /**
  * Recipe Detail Repository (MongoDB)
