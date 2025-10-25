@@ -1,4 +1,23 @@
 {
+    "settings": {
+        "title": "Settings",
+        "theme": {
+            "title": "Theme",
+            "light": "Light",
+            "dark": "Dark",
+            "system": "System"
+        },
+        "language": {
+            "title": "Language",
+            "en": "English",
+            "vi": "Tiếng Việt"
+        },
+        "account": {
+            "changePassword": "Change Password",
+            "lockAccount": "Lock Account",
+            "deleteAccount": "Delete Account"
+        }
+    },
     "carousel": {
         "viewRecipes": "View Recipes"
     },
@@ -17,6 +36,21 @@
         "description": "Sorry, the page you are looking for does not exist or has been moved.",
         "goHome": "Go to Home",
         "goBack": "Go Back"
+    },
+    "navigation": {
+        "home": "Home",
+        "search": "Search",
+        "newFeed": "New Feed",
+        "question": "Question",
+        "aiAssistant": "AI Assistant",
+        "profile": "Profile",
+        "signin": "Sign In",
+        "getStarted": "Get Started",
+
+        "dropdown": {
+            "setting": "Setting",
+            "signout": "Sign out"
+        }
     }
 }
 

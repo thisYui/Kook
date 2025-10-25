@@ -22,7 +22,7 @@ import Button from "./Button";
 </Dialog>
 */
 
-export default function Dialog({children, title, description, actionName, onAction, className}) {
+export default function Dialog({children, title, description, actionName, onAction, className, onCancel}) {
 
     return (
         <form action={onAction} className="w-full h-fit border px-6 py-8 rounded-2xl">
@@ -32,7 +32,7 @@ export default function Dialog({children, title, description, actionName, onActi
                 {children}
             </div>
             <div className="flex flex-row mt-5">
-                <Button name="Cancel" className="ml-auto border px-4 py-2 rounded-xl"></Button>
+                <Button name="Cancel" onClick={onCancel} className="ml-auto border px-4 py-2 rounded-xl"></Button>
                 <Button name={actionName} onClick={onAction} className="text-white ml-6 border px-4 py-2 rounded-xl bg-blue-500"></Button>
             </div>
         </form> 

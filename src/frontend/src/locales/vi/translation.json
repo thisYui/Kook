@@ -1,4 +1,23 @@
 {
+    "settings": {
+        "title": "Cài đặt",
+        "theme": {
+            "title": "Giao diện",
+            "light": "Sáng",
+            "dark": "Tối",
+            "system": "Hệ thống"
+        },
+        "language": {
+            "title": "Ngôn ngữ",
+            "en": "English",
+            "vi": "Tiếng Việt"
+        },
+        "account": {
+            "changePassword": "Đổi mật khẩu",
+            "lockAccount": "Khóa tài khoản",
+            "deleteAccount": "Xóa tài khoản"
+        }
+    },
     "carousel": {
         "viewRecipes": "Xem Công Thức"
     },
@@ -60,5 +79,20 @@
         "description": "Xin lỗi, trang bạn đang tìm kiếm không tồn tại hoặc đã được di chuyển.",
         "goHome": "Về Trang Chủ",
         "goBack": "Quay Lại"
+    },
+    "navigation": {
+        "home": "Trang chủ",
+        "search": "Tìm kiếm",
+        "newFeed": "Bảng tin",
+        "question": "Câu hỏi",
+        "aiAssistant": "Trợ lý AI",
+        "profile": "Hồ sơ",
+        "signin": "Đăng nhập",
+        "getStarted": "Bắt đầu",
+        
+        "dropdown": {
+            "setting": "Cài đặt",
+            "signout": "Đăng xuất"
+        }
     }
 }
