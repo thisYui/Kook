@@ -1,3 +1,0 @@
--- AlterTable
-ALTER TABLE "jwt_tokens" ALTER COLUMN "jti" SET DATA TYPE VARCHAR(128),
-ALTER COLUMN "hashed_token" SET DATA TYPE VARCHAR(512);

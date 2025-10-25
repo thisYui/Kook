@@ -364,51 +364,88 @@ async function seedTags() {
     console.log('Starting tags seeding...');
 
     try {
-        // Check if tags already exist
-        const existingCount = await prisma.tag.count();
-        if (existingCount > 0) {
-            console.log(`Database already has ${existingCount} tags. Skipping seed.`);
-            console.log('To re-seed, please clear the tags table first.');
-            return;
-        }
-
-        // Create tags
         let created = 0;
+        let updated = 0;
+        let skipped = 0;
+
         for (const tag of tags) {
-            await prisma.tag.create({
-                data: {
-                    name: tag.name,
-                    slug: tag.slug,
-                    usage_count: 0,
-                    is_active: true,
+            try {
+                // Check if tag exists by either slug or name
+                const existingTag = await prisma.tag.findFirst({
+                    where: {
+                        OR: [
+                            { slug: tag.slug },
+                            { name: tag.name }
+                        ]
+                    }
+                });
+
+                if (existingTag) {
+                    // Update existing tag
+                    await prisma.tag.update({
+                        where: { id: existingTag.id },
+                        data: {
+                            name: tag.name,
+                            slug: tag.slug,
+                            is_active: true,
+                        }
+                    });
+                    updated++;
+                } else {
+                    // Create new tag
+                    await prisma.tag.create({
+                        data: {
+                            name: tag.name,
+                            slug: tag.slug,
+                            usage_count: 0,
+                            is_active: true,
+                        }
+                    });
+                    created++;
                 }
-            });
-            created++;
+            } catch (error) {
+                // Handle any duplicate errors gracefully
+                if (error.code === 'P2002') {
+                    console.warn(`⚠ Skipping duplicate tag: ${tag.name} (${tag.slug})`);
+                    skipped++;
+                } else {
+                    throw error;
+                }
+            }
         }
 
-        console.log(`\n Successfully created ${created} tags!`);
-        console.log('\n Tag Categories Summary:');
-        console.log('    Countries & Regions: 22 tags');
-        console.log('    Cuisine Types: 23 tags');
-        console.log('    Cooking Methods: 33 tags');
-        console.log('    Meal Types: 17 tags');
-        console.log('    Dish Types: 30 tags');
-        console.log('    Main Ingredients: 18 tags');
-        console.log('    Dietary Preferences: 16 tags');
-        console.log('    Occasions & Holidays: 18 tags');
-        console.log('    Seasons: 6 tags');
-        console.log('    Health & Wellness: 18 tags');
-        console.log('    Difficulty Levels: 12 tags');
-        console.log('    Budget: 7 tags');
-        console.log('    Cooking Styles: 15 tags');
-        console.log('    Special Features: 14 tags');
-        console.log('    Texture & Taste: 15 tags');
-        console.log('    Equipment: 12 tags');
-        console.log('    Storage & Preparation: 10 tags');
-        console.log('    Popular Dishes: 12 tags');
+        const total = await prisma.tag.count();
+
+        console.log(`\n✅ Tag seeding completed!`);
+        console.log(`   📝 Created: ${created} new tags`);
+        console.log(`   🔄 Updated: ${updated} existing tags`);
+        if (skipped > 0) {
+            console.log(`   ⏭️  Skipped: ${skipped} duplicate tags`);
+        }
+        console.log(`   📊 Total tags in database: ${total}`);
+
+        console.log('\n📋 Tag Categories Summary:');
+        console.log('   🌍 Countries & Regions: 22 tags');
+        console.log('   🍜 Cuisine Types: 23 tags');
+        console.log('   👨‍🍳 Cooking Methods: 33 tags');
+        console.log('   🍽️  Meal Types: 17 tags');
+        console.log('   🥘 Dish Types: 30 tags');
+        console.log('   🥩 Main Ingredients: 18 tags');
+        console.log('   🥗 Dietary Preferences: 16 tags');
+        console.log('   🎉 Occasions & Holidays: 18 tags');
+        console.log('   🌸 Seasons: 6 tags');
+        console.log('   💪 Health & Wellness: 18 tags');
+        console.log('   📈 Difficulty Levels: 12 tags');
+        console.log('   💰 Budget: 7 tags');
+        console.log('   🎨 Cooking Styles: 15 tags');
+        console.log('   ⭐ Special Features: 14 tags');
+        console.log('   😋 Texture & Taste: 15 tags');
+        console.log('   🔧 Equipment: 12 tags');
+        console.log('   📦 Storage & Preparation: 10 tags');
+        console.log('   🏆 Popular Dishes: 12 tags');
 
     } catch (error) {
-        console.error('Error seeding tags:', error);
+        console.error('❌ Error seeding tags:', error);
         throw error;
     }
 }
@@ -417,15 +454,16 @@ async function seedTags() {
 if (require.main === module) {
     seedTags()
         .then(() => {
-            console.log('\nTags seed completed!');
-            prisma.$disconnect();
+            console.log('\n✅ Tags seed completed successfully!');
+            process.exit(0);
         })
         .catch((error) => {
-            console.error('Seed failed:', error);
-            prisma.$disconnect();
+            console.error('❌ Tags seed failed:', error);
             process.exit(1);
+        })
+        .finally(async () => {
+            await prisma.$disconnect();
         });
 }
 
 module.exports = { seedTags, tags };
-

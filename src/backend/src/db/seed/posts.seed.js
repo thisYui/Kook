@@ -238,22 +238,29 @@ async function checkAndFixMissingData() {
     const postCount = await prisma.post.count();
     const recipeCount = await prisma.recipe.count();
     const recipeDetailCount = await RecipeDetail.countDocuments();
+    const versionMapCount = await prisma.recipeVersionMap.count();
 
     console.log('📊 Database State:');
     console.log(`   Posts: ${postCount}`);
     console.log(`   Recipes (PostgreSQL): ${recipeCount}`);
-    console.log(`   Recipe Details (MongoDB): ${recipeDetailCount}\n`);
+    console.log(`   Recipe Details (MongoDB): ${recipeDetailCount}`);
+    console.log(`   Recipe Version Maps: ${versionMapCount}\n`);
 
     // Get all posts with their recipes
     const allPosts = await prisma.post.findMany({
         include: {
-            recipe: true,
+            recipe: {
+                include: {
+                    version_maps: true
+                }
+            },
             ingredients: true
         }
     });
 
     let fixedRecipes = 0;
     let fixedDetails = 0;
+    let fixedVersionMaps = 0;
     let deletedPosts = 0;
 
     // First pass: Delete posts without recipes and without ingredients (orphaned posts)
@@ -279,7 +286,11 @@ async function checkAndFixMissingData() {
     // Refresh posts list after deletion
     const remainingPosts = await prisma.post.findMany({
         include: {
-            recipe: true,
+            recipe: {
+                include: {
+                    version_maps: true
+                }
+            },
             ingredients: true
         }
     });
@@ -325,7 +336,8 @@ async function checkAndFixMissingData() {
 
             fixedRecipes++;
             fixedDetails++;
-            console.log(`   ✅ Created Recipe and RecipeDetail\n`);
+            fixedVersionMaps++;
+            console.log(`   ✅ Created Recipe, RecipeDetail, and VersionMap\n`);
             continue;
         }
 
@@ -345,23 +357,29 @@ async function checkAndFixMissingData() {
                 });
                 await recipeDetail.save();
 
-                const versionMap = await prisma.recipeVersionMap.findUnique({
-                    where: { recipe_id: post.recipe.id }
+                fixedDetails++;
+                console.log(`   ✅ Created RecipeDetail with ${steps.length} steps`);
+            }
+
+            // Fix missing version map (if recipe exists but no version map)
+            const versionMap = await prisma.recipeVersionMap.findFirst({
+                where: { recipe_id: post.recipe.id }
+            });
+
+            if (!versionMap) {
+                console.log(`🔧 Creating missing RecipeVersionMap for: "${post.title.substring(0, 50)}..."`);
+
+                await prisma.recipeVersionMap.create({
+                    data: {
+                        recipe_id: post.recipe.id,
+                        mongo_version: 1,
+                        is_synced: true,
+                        synced_at: new Date()
+                    }
                 });
 
-                if (!versionMap) {
-                    await prisma.recipeVersionMap.create({
-                        data: {
-                            recipe_id: post.recipe.id,
-                            mongo_version: 1,
-                            is_synced: true,
-                            synced_at: new Date()
-                        }
-                    });
-                }
-
-                fixedDetails++;
-                console.log(`   ✅ Created RecipeDetail with ${steps.length} steps\n`);
+                fixedVersionMaps++;
+                console.log(`   ✅ Created RecipeVersionMap\n`);
             }
         }
     }
@@ -370,23 +388,26 @@ async function checkAndFixMissingData() {
     const newPostCount = await prisma.post.count();
     const newRecipeCount = await prisma.recipe.count();
     const newRecipeDetailCount = await RecipeDetail.countDocuments();
+    const newVersionMapCount = await prisma.recipeVersionMap.count();
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📊 Final Database State:');
     console.log(`   Posts: ${newPostCount}`);
     console.log(`   Recipes: ${newRecipeCount}`);
     console.log(`   Recipe Details: ${newRecipeDetailCount}`);
+    console.log(`   Recipe Version Maps: ${newVersionMapCount}`);
     console.log(`\n🔧 Actions Taken:`);
     console.log(`   Deleted orphaned posts: ${deletedPosts}`);
     console.log(`   Created recipes: ${fixedRecipes}`);
     console.log(`   Created recipe details: ${fixedDetails}`);
+    console.log(`   Created version maps: ${fixedVersionMaps}`);
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-    if (newRecipeCount === newRecipeDetailCount && newPostCount === newRecipeCount) {
+    if (newRecipeCount === newRecipeDetailCount && newRecipeCount === newVersionMapCount && newPostCount === newRecipeCount) {
         console.log('✅ All data is now consistent!\n');
-        console.log(`   Every post has a recipe and recipe details.\n`);
-    } else if (newRecipeCount === newRecipeDetailCount) {
-        console.log('✅ Recipes and Recipe Details are consistent!\n');
+        console.log(`   Every post has a recipe, recipe details, and version map.\n`);
+    } else if (newRecipeCount === newRecipeDetailCount && newRecipeCount === newVersionMapCount) {
+        console.log('✅ Recipes, Recipe Details, and Version Maps are consistent!\n');
         console.log(`⚠️  Note: ${newPostCount - newRecipeCount} posts are simple posts without recipes (this is normal)\n`);
     } else {
         console.log('⚠️  Some inconsistencies remain. Please check manually.\n');
@@ -426,99 +447,83 @@ async function seedPosts() {
             if (!user) continue;
 
             for (const idx of templateIndices) {
-                if (idx >= recipeTemplates.length) continue;
-                const template = recipeTemplates[idx];
-                await createRecipePost(user.id, template);
-                totalPosts++;
-                totalRecipes++;
-                console.log(`  ✅ "${template.title}" by ${user.name}`);
+                if (idx < recipeTemplates.length) {
+                    const template = recipeTemplates[idx];
+                    await createRecipePost(user.id, template);
+                    totalRecipes++;
+                    totalPosts++;
+                    console.log(`   ✅ Created recipe post for ${email}: "${template.title}"`);
+                }
             }
         }
 
-        console.log('\n📄 Creating simple posts...');
-        let simplePostIdx = 0;
+        console.log(`\n📝 Created ${totalRecipes} recipe posts\n`);
+
+        // Create simple posts
+        console.log('📝 Creating simple posts...');
+        let totalSimplePosts = 0;
+
         for (const [email, count] of Object.entries(userSimplePostCounts)) {
             const user = await prisma.user.findUnique({ where: { email } });
-            if (!user) continue;
+            if (!user || count === 0) continue;
 
             for (let i = 0; i < count; i++) {
-                if (simplePostIdx >= simplePosts.length) simplePostIdx = 0;
-                const template = simplePosts[simplePostIdx];
-                await createSimplePost(user.id, template);
-                totalPosts++;
-                console.log(`  ✅ "${template.title}" by ${user.name}`);
-                simplePostIdx++;
+                if (i < simplePosts.length) {
+                    const template = simplePosts[i];
+                    await createSimplePost(user.id, template);
+                    totalSimplePosts++;
+                    totalPosts++;
+                    console.log(`   ✅ Created simple post for ${email}: "${template.title}"`);
+                }
             }
         }
 
-        // Update user post counts
-        console.log('\n🔄 Updating user counts...');
-        const users = await prisma.user.findMany({
-            include: { _count: { select: { posts: true } } }
-        });
+        console.log(`\n📝 Created ${totalSimplePosts} simple posts\n`);
 
+        // Update user post counts
+        console.log('📊 Updating user post counts...');
+        const users = await prisma.user.findMany();
         for (const user of users) {
+            const postCount = await prisma.post.count({
+                where: { author_id: user.id }
+            });
             await prisma.user.update({
                 where: { id: user.id },
-                data: { count_posts: user._count.posts }
+                data: { count_posts: postCount }
             });
         }
 
-        console.log('\n✅ Seeding completed!');
+        console.log('✅ Post seeding completed successfully!\n');
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-        console.log(`📊 Total Posts: ${totalPosts}`);
-        console.log(`   Recipe Posts: ${totalRecipes}`);
-        console.log(`   Simple Posts: ${totalPosts - totalRecipes}`);
+        console.log('📊 Summary:');
+        console.log(`   Total posts created: ${totalPosts}`);
+        console.log(`   Recipe posts: ${totalRecipes}`);
+        console.log(`   Simple posts: ${totalSimplePosts}`);
         console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-        // Verify data consistency after seeding
+        // Verify data consistency
         await checkAndFixMissingData();
 
     } catch (error) {
-        console.error('❌ Error:', error);
+        console.error('Error during seeding:', error);
         throw error;
     }
 }
 
-async function main() {
-    try {
-        // Connect to MongoDB using config with proper error handling
-        if (mongoose.connection.readyState === 0) {
-            console.log('🔌 Connecting to MongoDB...');
-            console.log('   URI:', process.env.MONGODB_URI || 'mongodb://localhost:27017/kook_db');
-
-            await connectMongo();
-
-            // Wait for connection to be ready
-            if (mongoose.connection.readyState !== 1) {
-                throw new Error('MongoDB connection failed');
-            }
-
-            console.log('✅ MongoDB connected successfully\n');
-        }
-
-        await seedPosts();
-    } catch (error) {
-        console.error('❌ Fatal error:', error);
-        throw error;
-    }
-}
-
-// Only run main if executed directly (not when imported)
+// Run if this file is executed directly
 if (require.main === module) {
-    main()
-        .catch((error) => {
-            console.error('❌ Fatal error:', error);
+    (async () => {
+        try {
+            await connectMongo();
+            await seedPosts();
+        } catch (error) {
+            console.error('Fatal error:', error);
             process.exit(1);
-        })
-        .finally(async () => {
+        } finally {
             await prisma.$disconnect();
-            if (mongoose.connection.readyState !== 0) {
-                await mongoose.disconnect();
-                console.log('👋 MongoDB disconnected.');
-            }
-            console.log('👋 Prisma disconnected.');
-        });
+            await mongoose.disconnect();
+        }
+    })();
 }
 
-module.exports = { seedPosts };
+module.exports = { seedPosts, checkAndFixMissingData };

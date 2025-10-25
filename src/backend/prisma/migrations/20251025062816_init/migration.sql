@@ -26,6 +26,10 @@ CREATE TABLE "users" (
     "language" VARCHAR(10) DEFAULT 'en',
     "theme" VARCHAR(20) DEFAULT 'light',
     "bio" TEXT,
+    "count_finished_recipes" INTEGER NOT NULL DEFAULT 0,
+    "count_posts" INTEGER NOT NULL DEFAULT 0,
+    "count_followers" INTEGER NOT NULL DEFAULT 0,
+    "count_following" INTEGER NOT NULL DEFAULT 0,
     "role" "Role" NOT NULL DEFAULT 'USER',
     "is_verified" BOOLEAN NOT NULL DEFAULT false,
     "is_disabled" BOOLEAN NOT NULL DEFAULT false,
@@ -70,7 +74,6 @@ CREATE TABLE "jwt_tokens" (
     "jti" VARCHAR(64) NOT NULL,
     "type" "token_type" NOT NULL DEFAULT 'REFRESH',
     "hashed_token" VARCHAR(255),
-    "device_name" VARCHAR(100),
     "user_agent" TEXT,
     "ip_address" VARCHAR(45),
     "exp" TIMESTAMP NOT NULL,
@@ -105,6 +108,7 @@ CREATE TABLE "posts" (
     "comment_count" INTEGER NOT NULL DEFAULT 0,
     "repost_count" INTEGER NOT NULL DEFAULT 0,
     "notebook_count" INTEGER NOT NULL DEFAULT 0,
+    "reply_question_id" UUID,
     "is_published" BOOLEAN NOT NULL DEFAULT true,
     "is_disabled" BOOLEAN NOT NULL DEFAULT false,
     "is_deleted" BOOLEAN NOT NULL DEFAULT false,
@@ -113,6 +117,17 @@ CREATE TABLE "posts" (
     "deleted_at" TIMESTAMP(3),
 
     CONSTRAINT "posts_pkey" PRIMARY KEY ("post_id")
+);
+
+-- CreateTable
+CREATE TABLE "questions" (
+    "question_id" UUID NOT NULL,
+    "image_url" TEXT,
+    "question" TEXT NOT NULL,
+    "created_at" TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP NOT NULL,
+
+    CONSTRAINT "questions_pkey" PRIMARY KEY ("question_id")
 );
 
 -- CreateTable
@@ -416,7 +431,13 @@ CREATE INDEX "recipes_total_minute_idx" ON "recipes"("total_minute");
 CREATE INDEX "recipe_version_maps_recipe_id_idx" ON "recipe_version_maps"("recipe_id");
 
 -- CreateIndex
+CREATE INDEX "recipe_version_maps_mongo_version_idx" ON "recipe_version_maps"("mongo_version");
+
+-- CreateIndex
 CREATE INDEX "recipe_version_maps_is_synced_idx" ON "recipe_version_maps"("is_synced");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "recipe_version_maps_recipe_id_mongo_version_key" ON "recipe_version_maps"("recipe_id", "mongo_version");
 
 -- CreateIndex
 CREATE INDEX "ingredients_post_id_idx" ON "ingredients"("post_id");
@@ -540,6 +561,9 @@ ALTER TABLE "follows" ADD CONSTRAINT "follows_followee_id_fkey" FOREIGN KEY ("fo
 
 -- AddForeignKey
 ALTER TABLE "posts" ADD CONSTRAINT "posts_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("user_id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "posts" ADD CONSTRAINT "posts_reply_question_id_fkey" FOREIGN KEY ("reply_question_id") REFERENCES "questions"("question_id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "recipes" ADD CONSTRAINT "recipes_post_id_fkey" FOREIGN KEY ("post_id") REFERENCES "posts"("post_id") ON DELETE CASCADE ON UPDATE CASCADE;

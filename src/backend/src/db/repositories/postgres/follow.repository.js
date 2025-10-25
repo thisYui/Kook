@@ -181,7 +181,28 @@ class FollowRepository {
             throw error;
         }
     }
+
+    /**
+     * Get follower IDs for a user
+     * @param {string} userId - User ID
+     * @returns {Array<string>} - Array of follower user IDs
+     */
+    async getFollowerIds(userId) {
+        try {
+            const followers = await prisma.follow.findMany({
+                where: {
+                    followee_id: userId,
+                },
+                select: {
+                    follower_id: true,
+                },
+            });
+            return followers.map(f => f.follower_id);
+        } catch (error) {
+            logger.error('Error getting follower IDs:', error);
+            throw error;
+        }
+    }
 }
 
 module.exports = new FollowRepository();
-

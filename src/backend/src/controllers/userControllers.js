@@ -188,14 +188,22 @@ async function markNotificationsSeen(req, res) {
  * @route POST /api/user/delete-account
  */
 async function deleteUserAccount(req, res) {
-    const { uid, token } = req.body;
+    const { uid } = req.body;
 
     try {
         if (!uid) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and token are required');
         }
 
-        const result = await userService.deleteUserAccount(uid, token);
+        // Token đã được validate bởi authenticateToken middleware
+        // req.user và req.token đã được attach bởi middleware
+
+        if (!req.token || !req.token.jti) {
+            // Nếu không có token info (không nên xảy ra vì đã qua middleware)
+            return ErrorResponse.send(res, ErrorCodes.UNAUTHORIZED, 'Invalid token');
+        }
+
+        const result = await userService.deleteUserAccount(uid, req.token.jti);
 
         res.status(200).json({
             success: true,
@@ -274,7 +282,6 @@ async function changeAvatar(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Đổi avatar thành công!',
             data: result
         });
 
@@ -425,7 +432,6 @@ async function followUser(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Followed user successfully',
             data: result
         });
 
@@ -451,7 +457,6 @@ async function unfollowUser(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Unfollowed user successfully',
             data: result
         });
 

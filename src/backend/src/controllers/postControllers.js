@@ -1,18 +1,21 @@
 const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
+const postService = require('../services/post/post.services');
 
 /**
+ * Create a new post
  * tags (array): Một mảng bao gồm các tags liên quan đến bài viết.
- * countryCode: Mã quốc gia (ví dụ: "US" cho Hoa Kỳ, "VN" cho Việt Nam).
+ * countryCode (ISO 3166-1 alpha-2): Mã quốc gia để xác định vị trí liên quan đến bài viết.
+ * recipeData (object, optional): Nếu bài viết liên quan đến công thức nấu ăn, đối tượng này có thể bao gồm các chi tiết như nguyên liệu, bước thực hiện, thời gian nấu, v.v.
  * @param req
  * @param res
  * @returns {Promise<void>}
  */
 async function newPost(req, res) {
-    const { uid, title, description, images, tags, countryCode, recipeData } = req.body;
+    const { uid, title, description, imageData, imageFormat, tags, countryCode, recipeData } = req.body;
 
     try {
-        // Validate input
+        // Validate input (validation done in controller as per requirements)
         if (!uid) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
         }
@@ -23,16 +26,31 @@ async function newPost(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Description is required');
         }
 
-        // TODO: Upload images to storage
-        // TODO: Create post in database
-        // TODO: Save recipe details to MongoDB if provided
-        // TODO: Return created post
+        // Create post using service
+        const result = await postService.createPost(uid, {
+            title,
+            description,
+            imageData,
+            imageFormat,
+            tags,
+            countryCode,
+            recipeData
+        });
 
-        res.status(200).json({ message: 'Tạo bài viết thành công!' });
+        res.status(201).json({
+            success: true,
+            message: 'Post created successfully',
+            data: result
+        });
 
     } catch (error) {
-        logger.error('Lỗi khi tạo bài viết:', error);
-        res.status(500).json({ message: 'Lỗi hệ thống!', error });
+        logger.error('Error in newPost controller:', error);
+
+        if (error.code) {
+            return ErrorResponse.send(res, error.code, error.message);
+        }
+
+        return ErrorResponse.send(res, ErrorCodes.SERVER_ERROR, 'Failed to create post');
     }
 }
 

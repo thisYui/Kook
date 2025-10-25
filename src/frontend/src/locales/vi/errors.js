@@ -100,6 +100,7 @@ export const errorMessages = {
     VALIDATION_2005: "Trường quá ngắn",
     VALIDATION_2006: "Định dạng không hợp lệ",
     VALIDATION_2007: "Giá trị không hợp lệ",
+    VALIDATION_2008: "Lỗi xác thực, thiếu dữ liệu",
 
     // Server Errors (5000-5099)
     SERVER_5001: "Lỗi máy chủ nội bộ",

@@ -249,12 +249,18 @@ class UserRepository {
             where: { id },
             data: {
                 avatar_url: avatarUrl,
-            },
-            select: {
-                id: true,
-                name: true,
-                email: true,
-                avatar_url: true,
+            }
+        });
+    }
+
+    /**
+     * Increment user post count
+     */
+    async incrementPostCount(id) {
+        return await prisma.user.update({
+            where: { id },
+            data: {
+                count_posts: { increment: 1 },
             }
         });
     }

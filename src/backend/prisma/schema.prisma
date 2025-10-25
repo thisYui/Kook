@@ -259,7 +259,9 @@ model RecipeVersionMap {
   // Relations
   recipe Recipe @relation(fields: [recipe_id], references: [id], onDelete: Cascade)
 
+  @@unique([recipe_id, mongo_version])
   @@index([recipe_id])
+  @@index([mongo_version])
   @@index([is_synced])
   @@map("recipe_version_maps")
 }

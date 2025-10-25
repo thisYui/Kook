@@ -100,6 +100,7 @@ export const errorMessages = {
     VALIDATION_2005: "Field is too short",
     VALIDATION_2006: "Invalid format",
     VALIDATION_2007: "Invalid value",
+    VALIDATION_2008: "Error during validation",
 
     // Server Errors (5000-5099)
     SERVER_5001: "Internal server error",

@@ -103,7 +103,6 @@ async function signup(req, res) {
 
         res.status(201).json({
             success: true,
-            message: 'Registration successful! Please check your email for OTP.',
             data: {
                 email: email,
                 expires_in: otpData.expires_in,
@@ -163,7 +162,6 @@ async function confirmOTP(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Email verified successfully!',
             data: {
                 uid: user.id,
                 token: tokenPair.accessToken,
@@ -227,7 +225,6 @@ async function requestOTP(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'OTP sent successfully!',
             data: {
                 expires_in: otpData.expires_in,
             }
@@ -292,7 +289,6 @@ async function refreshToken(req, res) {
 
         res.status(200).json({
             success: true,
-            message: 'Token refreshed successfully!',
             data: {
                 token: result.token,
                 expires_in: result.expiresIn,
@@ -317,9 +313,10 @@ async function logout(req, res) {
 
         if (!req.token || !req.token.jti) {
             // Nếu không có token info (không nên xảy ra vì đã qua middleware)
+            // Even on error, return success for better UX
+            // User wants to logout anyway
             return res.status(200).json({
-                success: true,
-                message: 'Logged out successfully!'
+                success: true
             });
         }
 
@@ -328,8 +325,7 @@ async function logout(req, res) {
         logger.info(`User logged out and token revoked: ${req.user.id}`);
 
         res.status(200).json({
-            success: true,
-            message: 'Logged out successfully!'
+            success: true
         });
 
     } catch (error) {
@@ -338,8 +334,7 @@ async function logout(req, res) {
         // Even on error, return success for better UX
         // User wants to logout anyway
         res.status(200).json({
-            success: true,
-            message: 'Logged out successfully!'
+            success: true
         });
     }
 }

@@ -11,6 +11,8 @@ const {
     addNoteToRepost,
     deleteNoteToRepost
 } = require('../controllers/postControllers');
+const { authenticateToken } = require("../middleware/authMiddleware");
+
 
 router.post("/post", newPost);
 router.post("/rating-post", ratePost);
