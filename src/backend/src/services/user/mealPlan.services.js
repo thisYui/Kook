@@ -1,8 +1,10 @@
 const mealPlanRepository = require('../../db/repositories/postgres/mealPlan.repository');
 const mealPlanMongoRepository = require('../../db/repositories/mongo/mealPlan.repositories');
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const { LIMIT } = require("../../constants")
 
 /**
  * Meal Plan Service
@@ -18,33 +20,29 @@ class MealPlanService {
      */
     async overviewUserMealPlans(uid, options = {}) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            const { limit = 20, offset = 0, activeOnly = true } = options;
+            const { limit = LIMIT, offset = 0, activeOnly = true } = options;
 
-            // 2. Get meal plans from repository
+            // Get meal plans from repository
             const mealPlans = await mealPlanRepository.getUserMealPlans(uid, {
                 limit,
                 offset,
                 activeOnly,
             });
 
-            // 3. Get total count
+            // Get total count
             const totalCount = await mealPlanRepository.countUserMealPlans(uid, activeOnly);
 
             logger.info(`Meal plans overview retrieved for user ${uid}: ${mealPlans.length} plans`);
 
             return {
-                success: true,
                 uid,
                 meal_plans: mealPlans.map(plan => ({
                     plan_id: plan.id,
                     goal: plan.goal,
-                    promt: plan.promt,
+                    prompt: plan.prompt,
                     day_start: plan.day_start,
                     version: plan.version,
                     is_active: plan.is_active,
@@ -73,25 +71,22 @@ class MealPlanService {
      */
     async showUserMealPlans(uid, mealPlanID) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // 2. Validate meal plan ID
+            // Validate meal plan ID
             if (!mealPlanID) {
                 throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Meal plan ID is required');
             }
 
-            // 3. Get meal plan metadata from PostgreSQL
+            // Get meal plan metadata from PostgreSQL
             const mealPlan = await mealPlanRepository.getMealPlanById(mealPlanID, uid);
 
             if (!mealPlan) {
                 throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Meal plan not found or does not belong to user');
             }
 
-            // 4. Get meal plan details from MongoDB
+            // Get meal plan details from MongoDB
             const mealPlanDetails = await mealPlanMongoRepository.getMealPlanDetailsByUser(mealPlanID, uid);
 
             // Format meal details
@@ -113,7 +108,7 @@ class MealPlanService {
                 meal_plan: {
                     plan_id: mealPlan.id,
                     goal: mealPlan.goal,
-                    promt: mealPlan.promt,
+                    prompt: mealPlan.prompt,
                     day_start: mealPlan.day_start,
                     version: mealPlan.version,
                     is_active: mealPlan.is_active,
@@ -141,18 +136,15 @@ class MealPlanService {
      */
     async createMealPlan(uid, planData) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // 2. Validate required fields
+            // Validate required fields
             if (!planData.day_start) {
                 throw new AppError(ErrorCodes.VALIDATION_REQUIRED_FIELD, 'Day start is required');
             }
 
-            // 3. Create meal plan
+            // Create meal plan
             const mealPlan = await mealPlanRepository.createMealPlan(uid, planData);
 
             logger.info(`Meal plan created for user ${uid}: ${mealPlan.id}`);
@@ -184,13 +176,13 @@ class MealPlanService {
      */
     async updateMealPlan(uid, planId, updateData) {
         try {
-            // 1. Validate meal plan exists and belongs to user
+            // Validate meal plan exists and belongs to user
             const mealPlan = await mealPlanRepository.getMealPlanById(planId, uid);
             if (!mealPlan) {
                 throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Meal plan not found');
             }
 
-            // 2. Update meal plan
+            // Update meal plan
             await mealPlanRepository.updateMealPlan(planId, uid, updateData);
 
             logger.info(`Meal plan ${planId} updated for user ${uid}`);
@@ -218,13 +210,13 @@ class MealPlanService {
      */
     async deactivateMealPlan(uid, planId) {
         try {
-            // 1. Validate meal plan exists and belongs to user
+            // Validate meal plan exists and belongs to user
             const mealPlan = await mealPlanRepository.getMealPlanById(planId, uid);
             if (!mealPlan) {
                 throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Meal plan not found');
             }
 
-            // 2. Deactivate meal plan
+            // Deactivate meal plan
             await mealPlanRepository.deactivateMealPlan(planId, uid);
 
             logger.info(`Meal plan ${planId} deactivated for user ${uid}`);

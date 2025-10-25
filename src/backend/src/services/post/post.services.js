@@ -8,6 +8,7 @@ const userRepository = require('../../db/repositories/postgres/user.repository.p
 const followRepository = require('../../db/repositories/postgres/follow.repository');
 const notificationService = require('../user/notification.services');
 const fileService = require('../user/file.services');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 
@@ -17,6 +18,43 @@ const logger = require('../../utils/logger');
  */
 
 class PostService {
+    /**
+     * Get a post by ID
+     * @param {string} postId - Post ID
+     * @returns {Object} - Post data
+     */
+    async getPostById(postId) {
+        try {
+            const post = await postRepository.findById(postId);
+            if (!post) {
+                throw new AppError(ErrorCodes.NOT_FOUND, 'Post not found');
+            }
+
+            logger.info(`Post retrieved: ${postId}`);
+
+            return {
+                success: true,
+                post: {
+                    id: post.id,
+                    author_id: post.author_id,
+                    title: post.title,
+                    short_description: post.short_description,
+                    image_url: post.image_url,
+                    created_at: post.created_at,
+                    updated_at: post.updated_at,
+                }
+            };
+
+        } catch (error) {
+            if (error instanceof AppError) {
+                throw error;
+            }
+            logger.error('Error retrieving post:', error);
+            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to retrieve post');
+        }
+    }
+
+
     /**
      * Create a new post with recipe details
      * @param {string} uid - User ID
@@ -35,10 +73,10 @@ class PostService {
                 recipeData
             } = postData;
 
-            // 1. Validate user exists and is active
-            await this.validateUserActive(uid);
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // 2. Upload image if provided
+            // Upload image if provided
             let imageUrl = null;
             if (imageData && imageFormat) {
                 const uploadResult = await fileService.uploadFile(
@@ -50,7 +88,7 @@ class PostService {
                 imageUrl = uploadResult.url;
             }
 
-            // 3. Create post in PostgreSQL
+            // Create post in PostgreSQL
             const post = await postRepository.create({
                 author_id: uid,
                 title,
@@ -58,20 +96,20 @@ class PostService {
                 image_url: imageUrl,
             });
 
-            // 4. Create recipe if recipeData provided
+            // Create recipe if recipeData provided
             if (recipeData) {
                 await this.createRecipeForPost(post.id, recipeData);
             }
 
-            // 5. Add tags to post
+            // Add tags to post
             if (tags && tags.length > 0) {
                 await postTagRepository.addTagsToPost(post.id, tags, countryCode);
             }
 
-            // 6. Update user post count
+            // Update user post count
             await userRepository.incrementPostCount(uid);
 
-            // 7. Notify followers about new post (async, don't wait)
+            // Notify followers about new post (async, don't wait)
             this.notifyFollowersAboutNewPost(uid, post.id, title).catch(err =>
                 logger.error('Error notifying followers:', err)
             );
@@ -189,25 +227,6 @@ class PostService {
             logger.error('Error notifying followers:', error);
             // Don't throw - this is a background task
         }
-    }
-
-    /**
-     * Validate user exists and is active
-     * @param {string} uid - User ID
-     * @private
-     */
-    async validateUserActive(uid) {
-        const user = await userRepository.findById(uid);
-        if (!user) {
-            throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-        }
-        if (user.is_disabled) {
-            throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'Account is disabled');
-        }
-        if (user.is_deleted) {
-            throw new AppError(ErrorCodes.USER_DELETED, 'Account has been deleted');
-        }
-        return user;
     }
 }
 

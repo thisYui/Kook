@@ -283,7 +283,7 @@ CREATE TABLE "meal_plan_meta" (
     "plan_id" UUID NOT NULL,
     "user_id" UUID NOT NULL,
     "goal" TEXT,
-    "promt" TEXT,
+    "prompt" TEXT,
     "day_start" DATE NOT NULL,
     "version" INTEGER NOT NULL DEFAULT 1,
     "is_active" BOOLEAN NOT NULL DEFAULT true,

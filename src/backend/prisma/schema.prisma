@@ -19,7 +19,7 @@ model User {
   name                    String    @db.VarChar(255)
   email                   String    @unique @db.VarChar(255)
   password_hash           String    @db.VarChar(255)
-  avatar_url              String?   @db.Text
+  avatar_url              String    @db.Text @default("/system/default_avatar.png")
   language                String?   @default("en") @db.VarChar(10)  // ISO 639-1 codes
   theme                   String?   @default("light") @db.VarChar(20)
   bio                     String?   @db.Text
@@ -473,7 +473,7 @@ model MealPlanMeta {
   id         String   @id @default(uuid()) @map("plan_id") @db.Uuid
   user_id    String   @db.Uuid
   goal       String?  @db.Text
-  promt      String?  @db.Text
+  prompt     String?  @db.Text
   day_start  DateTime @db.Date
   version    Int      @default(1)
   is_active  Boolean  @default(true)

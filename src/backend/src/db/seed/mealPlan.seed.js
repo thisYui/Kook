@@ -199,7 +199,7 @@ async function createMealPlan(userId, template, weekOffset = 0) {
             data: {
                 user_id: userId,
                 goal: template.goal,
-                promt: template.prompt,
+                prompt: template.prompt,
                 day_start: monday,
                 version: 1,
                 is_active: template.isActive

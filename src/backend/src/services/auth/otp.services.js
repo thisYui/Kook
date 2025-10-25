@@ -7,7 +7,7 @@ const {
   OTP_RESEND_COOLDOWN 
 } = require('../../constants');
 const { AppError } = require('../../utils/errorHandler');
-const { ErrorCodes } = require('../../utils/errorCodes');
+const { ErrorCodes } = require('../../constants/errorCodes');
 
 // Initialize cache với TTL mặc định
 const otpCache = new NodeCache({ 

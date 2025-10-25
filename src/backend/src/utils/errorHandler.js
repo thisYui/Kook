@@ -1,4 +1,4 @@
-const { ErrorCodes, ErrorStatusCodes } = require('./errorCodes');
+const { ErrorCodes, ErrorStatusCodes } = require('../constants/errorCodes');
 
 /**
  * Custom Application Error

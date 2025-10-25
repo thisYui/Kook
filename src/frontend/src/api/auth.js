@@ -11,8 +11,12 @@ export const authApi = {
             rememberMe: rememberMe
         });
 
-        // Backend always returns: { success: true, uid, user, remember_me, token, refresh_token, expires_in }
-        const loginData = response.data;
+        // Backend always returns: { success: true, data: { uid, user, remember_me, token, refresh_token, expires_in } }
+        if (!response.data.success) {
+            // TODO
+        }
+
+        const loginData = response.data.data;
 
         // Backend now always returns token (with different expiration times)
         if (loginData.token) {

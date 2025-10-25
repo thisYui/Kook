@@ -1,7 +1,9 @@
 const notebookRepository = require('../../db/repositories/postgres/notebook.repository');
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const { LIMIT } = require("../../constants")
 
 /**
  * Notebook Service
@@ -17,21 +19,18 @@ class NotebookService {
      */
     async showUserNotebook(uid, options = {}) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            const { limit = 20, offset = 0 } = options;
+            const { limit = LIMIT, offset = 0 } = options;
 
-            // 2. Get saved posts from notebook
+            // Get saved posts from notebook
             const notebookItems = await notebookRepository.getUserNotebook(uid, { limit, offset });
 
-            // 3. Get total count
+            // Get total count
             const totalCount = await notebookRepository.countNotebookItems(uid);
 
-            // 4. Format response
+            // Format response
             const savedPosts = notebookItems.map(item => ({
                 notebook_id: item.id,
                 post: {
@@ -78,24 +77,15 @@ class NotebookService {
      */
     async savePostToNotebook(uid, postId) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // 2. Save post to notebook
-            const notebook = await notebookRepository.savePost(uid, postId);
+            // Save post to notebook
+            await notebookRepository.savePost(uid, postId);
 
             logger.info(`User ${uid} saved post ${postId} to notebook`);
 
-            return {
-                success: true,
-                notebook_id: notebook.id,
-                user_id: uid,
-                post_id: postId,
-                saved_at: notebook.created_at,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -131,12 +121,7 @@ class NotebookService {
 
             logger.info(`User ${uid} removed post ${postId} from notebook`);
 
-            return {
-                success: true,
-                user_id: uid,
-                post_id: postId,
-                removed_at: new Date(),
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -149,4 +134,3 @@ class NotebookService {
 }
 
 module.exports = new NotebookService();
-

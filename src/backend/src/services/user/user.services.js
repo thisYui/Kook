@@ -1,7 +1,7 @@
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
-const { SUPPORTED_LANGUAGES, SUPPORTED_THEMES } = require('../../constants');
+const validateUtils = require('../../utils/validateUtils');
 const bcrypt = require('bcryptjs');
 const { BCRYPT_SALT_ROUNDS } = require('../../constants');
 const jwtTokenService = require('../auth/jwtToken.service');
@@ -21,26 +21,18 @@ class UserService {
      */
     async changeLanguage(uid, language) {
         try {
-            // Validate language value (business rule)
-            if (!SUPPORTED_LANGUAGES.includes(language)) {
-                throw new AppError(
-                    ErrorCodes.VALIDATION_INVALID_VALUE,
-                    `Invalid language. Supported languages: ${SUPPORTED_LANGUAGES.join(', ')}`
-                );
-            }
+            // Validate language value
+            validateUtils.validateLanguage(language);
 
-            // Validate user is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Update language preference
             const updatedUser = await userRepository.updateLanguage(uid, language);
 
             logger.info(`User ${uid} changed language to ${language}`);
 
-            return {
-                uid: updatedUser.id,
-                language: updatedUser.language,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -59,26 +51,18 @@ class UserService {
      */
     async changeTheme(uid, theme) {
         try {
-            // Validate theme value (business rule)
-            if (!SUPPORTED_THEMES.includes(theme)) {
-                throw new AppError(
-                    ErrorCodes.VALIDATION_INVALID_VALUE,
-                    `Invalid theme. Supported themes: ${SUPPORTED_THEMES.join(', ')}`
-                );
-            }
+            // Validate theme value
+            validateUtils.validateTheme(theme);
 
-            // Validate user is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Update theme preference
             const updatedUser = await userRepository.updateTheme(uid, theme);
 
             logger.info(`User ${uid} changed theme to ${theme}`);
 
-            return {
-                uid: updatedUser.id,
-                theme: updatedUser.theme,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -103,15 +87,9 @@ class UserService {
                 throw new AppError(ErrorCodes.AUTH_UNAUTHORIZED, 'Token does not match user ID');
             }
 
-            // Validate user exists and not already deleted (business rule)
+            // Validate user exists and check if not already deleted
             const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
-
-            if (user.is_deleted) {
-                throw new AppError(ErrorCodes.USER_DELETED, 'Account already deleted');
-            }
+            validateUtils.validateUserActive(user);
 
             // Soft delete user account
             await userRepository.softDelete(uid);
@@ -143,16 +121,11 @@ class UserService {
      */
     async resetPassword(uid, newPassword) {
         try {
-            // Find user by id (business rule)
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Find and validate user
+            const user = await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // Validate password strength (business rule)
-            if (newPassword.length < 8) {
-                throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Password must be at least 8 characters');
-            }
+            // Validate password strength
+            validateUtils.validatePassword(newPassword);
 
             // Hash new password
             const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
@@ -166,10 +139,7 @@ class UserService {
 
             logger.info(`User ${user.id} reset password successfully`);
 
-            return {
-                uid: user.id,
-                email: user.email,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -188,31 +158,24 @@ class UserService {
      */
     async changeEmail(uid, newEmail) {
         try {
-            // Validate email format (business rule)
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            if (!emailRegex.test(newEmail)) {
-                throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Invalid email format');
-            }
+            // Validate email format
+            validateUtils.validateEmail(newEmail);
 
-            // Validate user is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // Check if new email already exists (business rule)
+            // Check if new email already exists
             const existingUser = await userRepository.findByEmail(newEmail);
             if (existingUser) {
                 throw new AppError(ErrorCodes.AUTH_EMAIL_EXISTS, 'Email already in use');
             }
 
             // Update email (will set is_verified to false)
-            const updatedUser = await userRepository.updateEmail(uid, newEmail);
+            await userRepository.updateEmail(uid, newEmail);
 
             logger.info(`User ${uid} changed email to ${newEmail}`);
 
-            return {
-                uid: updatedUser.id,
-                email: updatedUser.email,
-                verification_required: true,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -220,69 +183,6 @@ class UserService {
             }
             logger.error('Error changing email:', error);
             throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to change email');
-        }
-    }
-
-    /**
-     * Change user password
-     * @param {string} uid - User ID
-     * @param {string} oldPassword - Current password
-     * @param {string} newPassword - New password
-     * @returns {Object} - Success response
-     */
-    async changePassword(uid, oldPassword, newPassword) {
-        try {
-            // Find user with password hash
-            const user = await userRepository.findByEmail((await userRepository.findById(uid)).email);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
-
-            // Validate user is active (business rule)
-            if (user.is_disabled) {
-                throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'Account is disabled');
-            }
-
-            if (user.is_deleted) {
-                throw new AppError(ErrorCodes.USER_DELETED, 'Account has been deleted');
-            }
-
-            // Verify old password (business rule)
-            const isValidPassword = await bcrypt.compare(oldPassword, user.password_hash);
-            if (!isValidPassword) {
-                throw new AppError(ErrorCodes.AUTH_INVALID_CREDENTIALS, 'Current password is incorrect');
-            }
-
-            // Validate new password strength (business rule)
-            if (newPassword.length < 8) {
-                throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'Password must be at least 8 characters');
-            }
-
-            // Check if new password is same as old password (business rule)
-            const isSamePassword = await bcrypt.compare(newPassword, user.password_hash);
-            if (isSamePassword) {
-                throw new AppError(ErrorCodes.VALIDATION_INVALID_VALUE, 'New password must be different from current password');
-            }
-
-            // Hash new password
-            const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
-            const passwordHash = await bcrypt.hash(newPassword, salt);
-
-            // Update user password
-            await userRepository.updatePassword(uid, passwordHash);
-
-            logger.info(`User ${uid} changed password successfully`);
-
-            return {
-                uid,
-            };
-
-        } catch (error) {
-            if (error instanceof AppError) {
-                throw error;
-            }
-            logger.error('Error changing password:', error);
-            throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to change password');
         }
     }
 
@@ -295,21 +195,39 @@ class UserService {
      */
     async changeAvatar(uid, avatarData, formatFile) {
         try {
-            // Validate user is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user is active and get current user
+            const currentUser = await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            // Upload avatar using file service
+            // Delete old avatar if it exists and is not a default avatar
+            if (currentUser.avatar_url) {
+                const isDefaultAvatar = currentUser.avatar_url.includes('/uploads/system/') ||
+                                       currentUser.avatar_url.includes('default_avatar');
+
+                if (!isDefaultAvatar) {
+                    try {
+                        // Extract filename from URL (e.g., /api/file/uid/avatar_123.jpg -> avatar_123.jpg)
+                        const urlParts = currentUser.avatar_url.split('/');
+                        const oldFilename = urlParts[urlParts.length - 1];
+
+                        // Delete old avatar file
+                        await fileService.deleteFile(uid, oldFilename);
+                        logger.info(`Deleted old avatar for user ${uid}: ${oldFilename}`);
+                    } catch (deleteError) {
+                        // Log error but don't fail the avatar change if delete fails
+                        logger.warn(`Failed to delete old avatar for user ${uid}:`, deleteError.message);
+                    }
+                }
+            }
+
+            // Upload new avatar using file service
             const uploadResult = await fileService.uploadAvatar(uid, avatarData, formatFile);
 
             // Update user avatar URL in database
-            const updatedUser = await userRepository.updateAvatar(uid, uploadResult.url);
+            await userRepository.updateAvatar(uid, uploadResult.url);
 
             logger.info(`User ${uid} changed avatar to ${uploadResult.url}`);
 
-            return {
-                uid: updatedUser.id,
-                avatar_url: updatedUser.avatar_url,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -326,23 +244,11 @@ class UserService {
      * @param {string} senderID - ID of user requesting the profile
      * @returns {Object} - User profile data with statistics
      */
-    async getUserProfile(uid, senderID) {
+    async getUserProfile(uid) {
         try {
-            // Find user by ID
+            // Find user by ID and validate
             const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
-
-            // Check if user is deleted
-            if (user.is_deleted) {
-                throw new AppError(ErrorCodes.USER_DELETED, 'User account has been deleted');
-            }
-
-            // Check if user is disabled
-            if (user.is_disabled) {
-                throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'User account is disabled');
-            }
+            validateUtils.validateUserActive(user);
 
             // Get user statistics
             const stats = await userRepository.getUserStats(uid);
@@ -371,15 +277,7 @@ class UserService {
                 is_own_profile: senderID === uid,
             };
 
-            // If viewing own profile, include private information
-            if (senderID === uid) {
-                profileData.email = user.email;
-                profileData.language = user.language;
-                profileData.theme = user.theme;
-                profileData.last_login = user.last_login;
-            }
-
-            logger.info(`User ${senderID} viewed profile of user ${uid}`);
+            logger.info(`Viewed profile of user ${uid}`);
 
             return profileData;
 
@@ -390,30 +288,6 @@ class UserService {
             logger.error('Error getting user profile:', error);
             throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to get user profile');
         }
-    }
-
-    /**
-     * Validate user exists and is active
-     * @param {string} uid - User ID
-     * @returns {Object} - User data
-     * @private
-     */
-    async validateUserActive(uid) {
-        const user = await userRepository.findById(uid);
-
-        if (!user) {
-            throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-        }
-
-        if (user.is_disabled) {
-            throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'Account is disabled');
-        }
-
-        if (user.is_deleted) {
-            throw new AppError(ErrorCodes.USER_DELETED, 'Account has been deleted');
-        }
-
-        return user;
     }
 }
 

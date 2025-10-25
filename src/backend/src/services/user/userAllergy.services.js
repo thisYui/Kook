@@ -1,5 +1,6 @@
 const userAllergyRepository = require('../../db/repositories/postgres/userAllergy.repository');
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 
@@ -16,11 +17,8 @@ class UserAllergyService {
      */
     async getUserAllergies(uid) {
         try {
-            // Validate user exists (business rule)
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Get user allergies
             const allergies = await userAllergyRepository.getUserAllergies(uid);
@@ -29,7 +27,6 @@ class UserAllergyService {
             logger.info(`User allergies retrieved for user ${uid}: ${allergies.length} items`);
 
             return {
-                success: true,
                 uid,
                 allergies: allergies.map(allergy => ({
                     id: allergy.id,
@@ -58,11 +55,8 @@ class UserAllergyService {
      */
     async addAllergy(uid, ingredientKey) {
         try {
-            // Validate user exists (business rule)
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Validate ingredient exists (business rule)
             const ingredientExists = await userAllergyRepository.ingredientExists(ingredientKey);
@@ -77,21 +71,11 @@ class UserAllergyService {
             }
 
             // Add allergy
-            const allergy = await userAllergyRepository.addAllergy(uid, ingredientKey);
+            await userAllergyRepository.addAllergy(uid, ingredientKey);
 
             logger.info(`Allergy added for user ${uid}: ${ingredientKey}`);
 
-            return {
-                success: true,
-                uid,
-                allergy: {
-                    id: allergy.id,
-                    ingredient_key: allergy.ingredient_key,
-                    ingredient_name: allergy.ingredient.display_name,
-                    category: allergy.ingredient.category,
-                    created_at: allergy.created_at,
-                },
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -110,11 +94,8 @@ class UserAllergyService {
      */
     async deleteAllergy(uid, ingredientKey) {
         try {
-            // Validate user exists (business rule)
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Check if allergy exists (business rule)
             const allergyExists = await userAllergyRepository.allergyExists(uid, ingredientKey);
@@ -127,12 +108,7 @@ class UserAllergyService {
 
             logger.info(`Allergy deleted for user ${uid}: ${ingredientKey}`);
 
-            return {
-                success: true,
-                uid,
-                ingredient_key: ingredientKey,
-                deleted_at: new Date(),
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {

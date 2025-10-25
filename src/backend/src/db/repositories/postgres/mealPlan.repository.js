@@ -87,7 +87,7 @@ class MealPlanRepository {
     /**
      * Create meal plan
      * @param {string} userId - User ID
-     * @param {Object} planData - Meal plan data (goal, promt, day_start)
+     * @param {Object} planData - Meal plan data (goal, prompt, day_start)
      * @returns {Object} - Created meal plan
      */
     async createMealPlan(userId, planData) {
@@ -96,7 +96,7 @@ class MealPlanRepository {
                 data: {
                     user_id: userId,
                     goal: planData.goal,
-                    promt: planData.promt,
+                    prompt: planData.prompt,
                     day_start: new Date(planData.day_start),
                     version: 1,
                     is_active: true,

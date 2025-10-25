@@ -21,10 +21,7 @@ async function changeLanguage(req, res) {
 
         const result = await userService.changeLanguage(uid, language);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in changeLanguage controller:', error);
@@ -46,10 +43,7 @@ async function changeTheme(req, res) {
 
         const result = await userService.changeTheme(uid, theme);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in changeTheme controller:', error);
@@ -94,12 +88,9 @@ async function addAllergy(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and ingredient_key are required');
         }
 
-        const result = await userAllergyService.addAllergy(uid, ingredient_key);
+        await userAllergyService.addAllergy(uid, ingredient_key);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in addAllergy controller:', error);
@@ -119,12 +110,9 @@ async function deleteAllergy(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and ingredient_key are required');
         }
 
-        const result = await userAllergyService.deleteAllergy(uid, ingredient_key);
+        await userAllergyService.deleteAllergy(uid, ingredient_key);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in deleteAllergy controller:', error);
@@ -133,19 +121,16 @@ async function deleteAllergy(req, res) {
 }
 
 async function getUserProfile(req, res) {
-    const { uid, senderID } = req.body;
+    const { uid } = req.body;
 
     try {
         // Validate input
         if (!uid) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
         }
-        if (!senderID) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Sender ID is required');
-        }
 
         // Get user profile from service
-        const result = await userService.getUserProfile(uid, senderID);
+        const result = await userService.getUserProfile(uid);
 
         res.status(200).json({
             success: true,
@@ -170,12 +155,9 @@ async function markNotificationsSeen(req, res) {
             return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) and notificationID are required');
         }
 
-        const result = await notificationService.markNotificationsSeen(uid, notificationID);
+        await notificationService.markNotificationsSeen(uid, notificationID);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in markNotificationsSeen controller:', error);
@@ -203,12 +185,9 @@ async function deleteUserAccount(req, res) {
             return ErrorResponse.send(res, ErrorCodes.UNAUTHORIZED, 'Invalid token');
         }
 
-        const result = await userService.deleteUserAccount(uid, req.token.jti);
+        await userService.deleteUserAccount(uid, req.token.jti);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in deleteUserAccount controller:', error);
@@ -230,10 +209,7 @@ async function resetPassword(req, res) {
 
         const result = await userService.resetPassword(uid, newPassword);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in resetPassword controller:', error);
@@ -255,10 +231,7 @@ async function changeEmail(req, res) {
 
         const result = await userService.changeEmail(uid, newEmail);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in changeEmail controller:', error);
@@ -280,13 +253,33 @@ async function changeAvatar(req, res) {
 
         const result = await userService.changeAvatar(uid, avatarData, formatFile);
 
+        res.status(200).json({ success: true });
+
+    } catch (error) {
+        logger.error('Error in changeAvatar controller:', error);
+        return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
+    }
+}
+
+/** * Overview notebook (saved posts)
+ * @route POST /api/users/overview-notebook
+ */
+async function overviewNoteBook(req, res) {
+    const { uid, limit, offset } = req.body;
+
+    try {
+        if (!uid) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        }
+
+        const result = await notebookService.overviewNoteBook(uid, { limit, offset });
+
         res.status(200).json({
             success: true,
             data: result
         });
-
     } catch (error) {
-        logger.error('Error in changeAvatar controller:', error);
+        logger.error('Error in overviewNoteBook controller:', error);
         return ErrorResponse.send(res, error.code || ErrorCodes.SERVER_ERROR, error.message);
     }
 }
@@ -295,15 +288,16 @@ async function changeAvatar(req, res) {
  * Show user notebook (saved posts)
  * @route POST /api/users/show-user-notebook
  */
-async function showUserNotebook(req, res) {
-    const { uid, limit, offset } = req.body;
+async function showPostNotebook(req, res) {
+    const { postID } = req.body;
 
     try {
-        if (!uid) {
-            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID (uid) is required');
+        if (!postID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Post ID (postID) is required');
         }
 
-        const result = await notebookService.showUserNotebook(uid, { limit, offset });
+        // TODO: Call function in viewPost
+        const result = null;
 
         res.status(200).json({
             success: true,
@@ -455,10 +449,7 @@ async function unfollowUser(req, res) {
 
         const result = await followService.unfollowUser(follower_id, followee_id);
 
-        res.status(200).json({
-            success: true,
-            data: result
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Error in unfollowUser controller:', error);
@@ -478,11 +469,12 @@ module.exports = {
     resetPassword,
     changeEmail,
     changeAvatar,
-    showUserNotebook,
+    overviewNoteBook,
+    showPostNotebook,
     overviewUserMealPlans,
     showUserMealPlans,
     getFollowers,
     getFollowing,
     followUser,
-    unfollowUser
+    unfollowUser,
 };

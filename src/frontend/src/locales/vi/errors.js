@@ -24,6 +24,7 @@ export const errorMessages = {
     AUTH_1018: "Mật khẩu hiện tại không đúng",
     AUTH_1019: "Yêu cầu gửi lại OTP quá sớm. Vui lòng chờ trước khi yêu cầu mã mới",
     AUTH_1020: "Đã vượt quá số lần thử mã OTP. Vui lòng yêu cầu mã mới",
+    AUTH_1021: "Email đã tồn tại trong hệ thống",
 
     // User Errors (1100-1199)
     USER_1101: "Không tìm thấy người dùng",
@@ -32,6 +33,7 @@ export const errorMessages = {
     USER_1104: "Chưa theo dõi người dùng này",
     USER_1105: "Không thể tự theo dõi mình",
     USER_1106: "Thông tin dị ứng không hợp lệ",
+    USER_1107: "Người dùng đã bị xóa",
 
     // Post Errors (1200-1299)
     POST_1201: "Không tìm thấy bài viết",

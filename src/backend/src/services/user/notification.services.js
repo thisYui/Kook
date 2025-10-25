@@ -1,5 +1,6 @@
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
 const notificationRepository = require('../../db/repositories/postgres/notification.repository');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
 
@@ -19,8 +20,8 @@ class NotificationService {
      */
     async createNotification(uid, type, title, content) {
         try {
-            // Validate user exists and is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Create notification
             const notification = await notificationRepository.create(uid, type, title, content);
@@ -55,8 +56,8 @@ class NotificationService {
      */
     async markNotificationsSeen(uid, notificationID) {
         try {
-            // Validate user exists and is active (business rule)
-            await this.validateUserActive(uid);
+            // Validate user exists and is active
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
             // Check if notification belongs to user (business rule)
             const belongsToUser = await notificationRepository.belongsToUser(notificationID, uid);
@@ -65,16 +66,11 @@ class NotificationService {
             }
 
             // Mark notification as read
-            const updatedNotification = await notificationRepository.markAsRead(notificationID);
+            await notificationRepository.markAsRead(notificationID);
 
             logger.info(`User ${uid} marked notification ${notificationID} as seen`);
 
-            return {
-                success: true,
-                notification_id: updatedNotification.id,
-                is_read: updatedNotification.is_read,
-                read_at: updatedNotification.updated_at,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -83,25 +79,6 @@ class NotificationService {
             logger.error('Error marking notification as seen:', error);
             throw new AppError(ErrorCodes.SERVER_ERROR, 'Failed to mark notification as seen');
         }
-    }
-
-    /**
-     * Validate user exists and is active
-     * @param {string} uid - User ID
-     * @private
-     */
-    async validateUserActive(uid) {
-        const user = await userRepository.findById(uid);
-        if (!user) {
-            throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-        }
-        if (user.is_disabled) {
-            throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED, 'Account is disabled');
-        }
-        if (user.is_deleted) {
-            throw new AppError(ErrorCodes.USER_DELETED, 'Account has been deleted');
-        }
-        return user;
     }
 }
 

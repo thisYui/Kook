@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {
+    viewPost,
     newPost,
     ratePost,
     commentPost,
@@ -14,6 +15,7 @@ const {
 const { authenticateToken } = require("../middleware/authMiddleware");
 
 
+router.post("post/:id", viewPost)
 router.post("/post", newPost);
 router.post("/rating-post", ratePost);
 router.post("/new-comment-post", commentPost);

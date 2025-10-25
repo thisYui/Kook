@@ -24,6 +24,7 @@ export const errorMessages = {
     AUTH_1018: "Current password is incorrect",
     AUTH_1019: "OTP resend request too soon. Please wait before requesting a new code",
     AUTH_1020: "Exceeded maximum OTP attempts. Please request a new code",
+    AUTH_1021: "Email already exists in the system",
 
     // User Errors (1100-1199)
     USER_1101: "User not found",
@@ -32,6 +33,7 @@ export const errorMessages = {
     USER_1104: "Not following this user",
     USER_1105: "Cannot follow yourself",
     USER_1106: "Invalid allergy information",
+    USER_1107: "User account has been deleted",
 
     // Post Errors (1200-1299)
     POST_1201: "Post not found",

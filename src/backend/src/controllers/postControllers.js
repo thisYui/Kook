@@ -2,6 +2,43 @@ const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
 const postService = require('../services/post/post.services');
 
+
+/**
+ * View a post by ID
+ * @param req
+ * @param res
+ * @returns {Promise<void>}
+ */
+async function viewPost(req, res) {
+    const { postID } = req.params;
+
+    try {
+        if (!postID) {
+            return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Post ID is required');
+        }
+
+        const post = await postService.getPostById(postID);
+
+        if (!post) {
+            return ErrorResponse.send(res, ErrorCodes.NOT_FOUND, 'Post not found');
+        }
+
+        res.status(200).json({
+            success: true,
+            data: post
+        });
+
+    } catch (error) {
+        logger.error('Error in viewPost controller:', error);
+
+        if (error.code) {
+            return ErrorResponse.send(res, error.code, error.message);
+        }
+
+        return ErrorResponse.send(res, ErrorCodes.SERVER_ERROR, 'Failed to retrieve post');
+    }
+}
+
 /**
  * Create a new post
  * tags (array): Một mảng bao gồm các tags liên quan đến bài viết.
@@ -39,7 +76,6 @@ async function newPost(req, res) {
 
         res.status(201).json({
             success: true,
-            message: 'Post created successfully',
             data: result
         });
 
@@ -258,6 +294,7 @@ async function deleteNoteToRepost(req, res) {
 }
 
 module.exports = {
+    viewPost,
     newPost,
     ratePost,
     commentPost,

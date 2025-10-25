@@ -1,7 +1,9 @@
 const followRepository = require('../../db/repositories/postgres/follow.repository');
 const userRepository = require('../../db/repositories/postgres/user.repository.prisma');
+const validateUtils = require('../../utils/validateUtils');
 const { AppError, ErrorCodes } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const { LIMIT } = require("../../constants")
 
 /**
  * Follow Service
@@ -17,26 +19,23 @@ class FollowService {
      */
     async getFollowList(uid, options = {}) {
         try {
-            // 1. Validate user exists
-            const user = await userRepository.findById(uid);
-            if (!user) {
-                throw new AppError(ErrorCodes.USER_NOT_FOUND, 'User not found');
-            }
+            // Validate user exists
+            await validateUtils.validateUserActiveById(userRepository.findById.bind(userRepository), uid);
 
-            const { type = 'both', limit = 20, offset = 0 } = options;
+            const { type = 'both', limit = LIMIT, offset = 0 } = options;
 
             let followers = [];
             let following = [];
             let followerCount = 0;
             let followingCount = 0;
 
-            // 2. Get followers if requested
+            // Get followers if requested
             if (type === 'followers' || type === 'both') {
                 followers = await followRepository.getFollowers(uid, { limit, offset });
                 followerCount = await followRepository.countFollowers(uid);
             }
 
-            // 3. Get following if requested
+            // Get following if requested
             if (type === 'following' || type === 'both') {
                 following = await followRepository.getFollowing(uid, { limit, offset });
                 followingCount = await followRepository.countFollowing(uid);
@@ -45,7 +44,6 @@ class FollowService {
             logger.info(`Follow list retrieved for user ${uid}`);
 
             return {
-                success: true,
                 uid,
                 followers: followers.map(f => ({
                     id: f.id,
@@ -78,7 +76,7 @@ class FollowService {
      */
     async getFollowers(uid, options = {}) {
         try {
-            const { limit = 20, offset = 0 } = options;
+            const { limit = LIMIT, offset = 0 } = options;
 
             // Get followers
             const followers = await followRepository.getFollowers(uid, { limit, offset });
@@ -87,7 +85,6 @@ class FollowService {
             logger.info(`Followers list retrieved for user ${uid}: ${followers.length} followers`);
 
             return {
-                success: true,
                 uid,
                 followers: followers.map(f => ({
                     id: f.id,
@@ -129,7 +126,6 @@ class FollowService {
             logger.info(`Following list retrieved for user ${uid}: ${following.length} following`);
 
             return {
-                success: true,
                 uid,
                 following: following.map(f => ({
                     id: f.id,
@@ -185,17 +181,11 @@ class FollowService {
             }
 
             // 4. Create follow relationship
-            const follow = await followRepository.follow(followerId, followeeId);
+            await followRepository.follow(followerId, followeeId);
 
             logger.info(`User ${followerId} followed user ${followeeId}`);
 
-            return {
-                success: true,
-                follow_id: follow.id,
-                follower_id: followerId,
-                followee_id: followeeId,
-                created_at: follow.created_at,
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {
@@ -225,12 +215,7 @@ class FollowService {
 
             logger.info(`User ${followerId} unfollowed user ${followeeId}`);
 
-            return {
-                success: true,
-                follower_id: followerId,
-                followee_id: followeeId,
-                unfollowed_at: new Date(),
-            };
+            return true;
 
         } catch (error) {
             if (error instanceof AppError) {

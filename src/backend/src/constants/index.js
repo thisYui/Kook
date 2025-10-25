@@ -28,6 +28,10 @@ module.exports = {
   SUPPORTED_LANGUAGES: ['vi', 'en'],
   SUPPORTED_THEMES: ['light', 'dark', 'system'],
 
+
+  // Pagination
+  LIMIT: 20,
+
   // HTTP Status Codes
   HTTP_STATUS: {
     OK: 200,

@@ -4,7 +4,6 @@ const authService = require('../services/auth/auth.services');
 const otpService = require('../services/auth/otp.services');
 const userRepository = require('../db/repositories/postgres/user.repository.prisma');
 const jwtTokenService = require('../services/auth/jwtToken.service');
-const { JWT_ACCESS_TOKEN_EXPIRE_SECONDS } = require('../constants');
 
 async function login(req, res) {
     const { email, password, rememberMe } = req.body;
@@ -88,7 +87,7 @@ async function signup(req, res) {
         const hashedPassword = await authService.hashPassword(password);
 
         // Create user (unverified)
-        const newUser = await userRepository.create({
+        await userRepository.create({
             name: fullName,
             email: email,
             password_hash: hashedPassword,
@@ -151,7 +150,6 @@ async function confirmOTP(req, res) {
 
         // Generate JWT tokens for automatic login
         const deviceInfo = {
-            device: req.headers['user-agent'],
             userAgent: req.headers['user-agent'],
             ip: req.ip,
         };
@@ -279,7 +277,6 @@ async function refreshToken(req, res) {
 
         // Device info from request
         const deviceInfo = {
-            device: req.body.device || req.headers['user-agent'],
             userAgent: req.body.user_agent || req.headers['user-agent'],
             ip: req.ip || req.connection.remoteAddress || 'unknown',
         };
@@ -321,12 +318,10 @@ async function logout(req, res) {
         }
 
         // Revoke the token using JTI from middleware
-        await jwtTokenService.revokeToken(req.token.jti);
+        await authService.logout(req.token.jti);
         logger.info(`User logged out and token revoked: ${req.user.id}`);
 
-        res.status(200).json({
-            success: true
-        });
+        res.status(200).json({ success: true });
 
     } catch (error) {
         logger.error('Logout error:', error);

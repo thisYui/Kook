@@ -4,6 +4,7 @@ const jwtTokenService = require('./jwtToken.service');
 const { ErrorCodes } = require('../../utils/errorHandler');
 const { AppError } = require('../../utils/errorHandler');
 const logger = require('../../utils/logger');
+const validateUtils = require('../../utils/validateUtils');
 const { BCRYPT_SALT_ROUNDS } = require('../../constants');
 
 /**
@@ -34,13 +35,11 @@ class AuthService {
                 throw new AppError(ErrorCodes.AUTH_ACCOUNT_NOT_VERIFIED);
             }
 
-            // Check if account is disabled
-            if (user.is_disabled) {
-                throw new AppError(ErrorCodes.AUTH_ACCOUNT_DISABLED);
-            }
+            // Validate user is active (disabled or deleted check)
+            validateUtils.validateUserActive(user);
 
             // Verify password (use password_hash from schema)
-            const isValidPassword = await bcrypt.compare(password, user.password_hash);
+            const isValidPassword = await this.verifyPassword(password, user.password_hash);
             if (!isValidPassword) {
                 logger.warn(`Failed login attempt for user: ${email}`);
                 throw new AppError(ErrorCodes.AUTH_INVALID_CREDENTIALS);
@@ -58,12 +57,14 @@ class AuthService {
             // Prepare response
             const response = {
                 success: true,
-                uid: user.id,
-                user: userWithoutPassword,
-                remember_me: rememberMe,
-                token: tokenPair.accessToken,
-                refresh_token: tokenPair.refreshToken,
-                expires_in: tokenPair.expiresIn,
+                data: {
+                    uid: user.id,
+                    user: userWithoutPassword,
+                    remember_me: rememberMe,
+                    token: tokenPair.accessToken,
+                    refresh_token: tokenPair.refreshToken,
+                    expires_in: tokenPair.expiresIn
+                }
             };
 
             logger.info(`User logged in successfully: ${email} (rememberMe: ${rememberMe})`);
@@ -88,7 +89,7 @@ class AuthService {
     async logout(jti) {
         try {
             await jwtTokenService.revokeToken(jti);
-            return { success: true, message: 'Logged out successfully' };
+            return true;
         } catch (error) {
             logger.error('Logout error:', error);
             throw new AppError(ErrorCodes.SERVER_ERROR, 'Logout failed');
@@ -130,7 +131,7 @@ class AuthService {
      */
     async hashPassword(password) {
         const salt = await bcrypt.genSalt(BCRYPT_SALT_ROUNDS);
-        return await bcrypt.hash(password, salt);
+        return bcrypt.hash(password, salt);
     }
 
     /**
@@ -148,37 +149,16 @@ class AuthService {
      * @returns {Object} - Validation result
      */
     validatePasswordStrength(password) {
-        const minLength = 8;
-        const hasUpperCase = /[A-Z]/.test(password);
-        const hasLowerCase = /[a-z]/.test(password);
-        const hasNumbers = /\d/.test(password);
-        const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-        const isValid = password.length >= minLength &&
-                       hasUpperCase &&
-                       hasLowerCase &&
-                       hasNumbers;
-
-        return {
-            isValid,
-            errors: {
-                minLength: password.length < minLength,
-                hasUpperCase: !hasUpperCase,
-                hasLowerCase: !hasLowerCase,
-                hasNumbers: !hasNumbers,
-                hasSpecialChar: !hasSpecialChar,
-            }
-        };
+        return validateUtils.checkPasswordStrength(password);
     }
 
     /**
-     * Validate email format
+     * Validate email format (use validateUtils)
      * @param {string} email - Email to validate
      * @returns {boolean}
      */
     validateEmail(email) {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email);
+        return validateUtils.isValidEmail(email);
     }
 }
 

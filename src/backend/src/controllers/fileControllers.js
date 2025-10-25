@@ -1,4 +1,5 @@
 const path = require('path');
+const fs = require('fs');
 const logger = require('../utils/logger');
 const { ErrorResponse, ErrorCodes } = require('../utils/errorHandler');
 
@@ -6,15 +7,18 @@ exports.show = (req, res) => {
   try {
     const { id, filename } = req.params;
 
-    // Validate input
-    if (!id) {
-      return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'User ID is required');
-    }
-    if (!filename) {
-      return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Filename is required');
+    if (!id || !filename) {
+      return ErrorResponse.send(res, ErrorCodes.VALIDATION_ERROR, 'Invalid path');
     }
 
-    const filePath = path.join(__dirname, '..', 'uploads', id, filename);
+    // ví dụ id = 'system', filename = 'default_avatar.png'
+    const filePath = path.join(__dirname, '../..', 'uploads', id, filename);
+
+    // kiểm tra file tồn tại
+    if (!fs.existsSync(filePath)) {
+      return ErrorResponse.send(res, ErrorCodes.NOT_FOUND, 'File not found');
+    }
+
     res.sendFile(filePath);
   } catch (error) {
     logger.error('Error serving file:', error);
